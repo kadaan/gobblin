@@ -54,6 +54,10 @@ if (!project.hasProperty('hadoopVersion')) {
   }
 }
 
+if (!project.hasProperty('hadoopAwsVersion')) {
+  hadoopAwsVersion = '2.6.0'
+}
+
 if (!project.hasProperty('hiveVersion')) {
   hiveVersion = '1.2.1'
 }
@@ -97,7 +101,7 @@ ext.externalDependency = [
   "hadoopYarnCommon": "org.apache.hadoop:hadoop-yarn-common:"+hadoopVersion,
   "hadoopYarnClient": "org.apache.hadoop:hadoop-yarn-client:"+hadoopVersion,
   "hadoopAnnotations": "org.apache.hadoop:hadoop-annotations:"+hadoopVersion,
-  "hadoopAws": "org.apache.hadoop:hadoop-aws:"+hadoopVersion,
+  "hadoopAws": "org.apache.hadoop:hadoop-aws:"+hadoopAwsVersion,
   "hiveService": "org.apache.hive:hive-service:"+hiveVersion,
   "hiveJdbc": "org.apache.hive:hive-jdbc:"+hiveVersion,
   "hiveMetastore": "org.apache.hive:hive-metastore:"+hiveVersion,
