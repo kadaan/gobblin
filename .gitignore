@@ -50,3 +50,5 @@ out/
 **/mainGeneratedDataTemplate
 **/mainGeneratedRest
 gobblin-dist*
+gobblin.tar.gz
+masterPwd

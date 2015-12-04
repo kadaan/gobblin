@@ -97,7 +97,7 @@ ext.externalDependency = [
   "hadoopYarnCommon": "org.apache.hadoop:hadoop-yarn-common:"+hadoopVersion,
   "hadoopYarnClient": "org.apache.hadoop:hadoop-yarn-client:"+hadoopVersion,
   "hadoopAnnotations": "org.apache.hadoop:hadoop-annotations:"+hadoopVersion,
-  "hadoopAws": "org.apache.hadoop:hadoop-aws:2.6.0",
+  "hadoopAws": "org.apache.hadoop:hadoop-aws:"+hadoopVersion,
   "hiveService": "org.apache.hive:hive-service:"+hiveVersion,
   "hiveJdbc": "org.apache.hive:hive-jdbc:"+hiveVersion,
   "hiveMetastore": "org.apache.hive:hive-metastore:"+hiveVersion,
@@ -200,6 +200,7 @@ plugins.withType(JavaPlugin) {
     compile
     dependencies {
       if (project.hasProperty('useHadoop2')) {
+        compile externalDependency.hadoopAws
         compile externalDependency.hadoopCommon
         compile externalDependency.hadoopClientCore
         compile externalDependency.hadoopAnnotations
