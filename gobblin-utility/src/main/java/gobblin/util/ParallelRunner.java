@@ -236,6 +236,19 @@ public class ParallelRunner implements Closeable {
     }));
   }
 
+  /**
+   * Move a {@link Path}.
+   *
+   * <p>
+   *   This method submits a task to move a {@link Path} and returns immediately
+   *   after the task is submitted.
+   * </p>
+   *
+   * @param src path to be moved
+   * @param dstFs the destination {@link FileSystem}
+   * @param dst the destination path
+   * @param group an optional group name for the destination path
+   */
   public void movePath(final Path src, final FileSystem dstFs, final Path dst, final Optional<String> group) {
     this.futures.add(this.executor.submit(new Callable<Void>() {
       @Override
@@ -244,10 +257,6 @@ public class ParallelRunner implements Closeable {
         lock.lock();
         try {
           if (fs.exists(src)) {
-            if (dstFs.equals(dst)) {
-              LOGGER.warn(String.format("Failed to move %s to %s: dst already exists", src, dst));
-              return null;
-            }
             HadoopUtils.movePath(fs, src, dstFs, dst);
             if (group.isPresent()) {
               HadoopUtils.setGroup(dstFs, dst, group.get());

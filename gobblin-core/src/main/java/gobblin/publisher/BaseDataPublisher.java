@@ -87,15 +87,14 @@ public class BaseDataPublisher extends SingleTaskDataPublisher {
 
     // Get a FileSystem instance for each branch
     for (int i = 0; i < this.numBranches; i++) {
-      String writerUriStr = this.getState().getProp(
-              ForkOperatorUtils.getPropertyNameForBranch(ConfigurationKeys.WRITER_FILE_SYSTEM_URI, this.numBranches, i),
-              ConfigurationKeys.LOCAL_FS_URI);
-      URI writerUri = URI.create(writerUriStr);
+      URI writerUri = URI.create(this.getState().getProp(
+          ForkOperatorUtils.getPropertyNameForBranch(ConfigurationKeys.WRITER_FILE_SYSTEM_URI, this.numBranches, i),
+          ConfigurationKeys.LOCAL_FS_URI));
       this.writerFileSystemByBranches.add(FileSystem.get(writerUri, conf));
 
       URI publisherUri = URI.create(this.getState().getProp(
           ForkOperatorUtils.getPropertyNameForBranch(ConfigurationKeys.DATA_PUBLISHER_FILE_SYSTEM_URI, this.numBranches, i),
-          writerUriStr));
+          writerUri.toString()));
       this.publisherFileSystemByBranches.add(FileSystem.get(publisherUri, conf));
 
       // The group(s) will be applied to the final publisher output directory(ies)
