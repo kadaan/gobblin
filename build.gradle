@@ -222,7 +222,7 @@ plugins.withType(JavaPlugin) {
     compile
     dependencies {
       if (project.hasProperty('useHadoop2')) {
-        compile externalDependency.hadoopAws
+        runtime externalDependency.hadoopAws
         compile externalDependency.hadoopCommon
         compile externalDependency.hadoopClientCore
         compile externalDependency.hadoopAnnotations
