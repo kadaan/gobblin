@@ -169,8 +169,8 @@ public class ParallelRunnerTest {
     String expected = "test";
     ByteArrayOutputStream actual = new ByteArrayOutputStream();
 
-    Path src = new Path("/src/file.txt");
-    Path dst = new Path("/dst/file.txt");
+    Path src = new Path(this.outputPath, "sf");
+    Path dst = new Path(this.outputPath, "df");
     FileSystem fs1 = Mockito.mock(FileSystem.class);
     Mockito.when(fs1.exists(src)).thenReturn(true);
     Mockito.when(fs1.getUri()).thenReturn(new URI("fs1:////"));
