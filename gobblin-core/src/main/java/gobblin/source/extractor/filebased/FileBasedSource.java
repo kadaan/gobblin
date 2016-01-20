@@ -89,14 +89,12 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
     }
 
     TableType tableType = TableType.valueOf(state.getProp(ConfigurationKeys.EXTRACT_TABLE_TYPE_KEY).toUpperCase());
-    List<WorkUnitState> previousWorkunits = Lists.newArrayList(state.getPreviousWorkUnitStates());
+    SourceState previousSourceState = state.getPreviousSourceState();
     List<String> prevFsSnapshot = Lists.newArrayList();
 
     // Get list of files seen in the previous run
-    if (!previousWorkunits.isEmpty() && previousWorkunits.get(0).getWorkunit()
-        .contains(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT)) {
-      prevFsSnapshot =
-          previousWorkunits.get(0).getWorkunit().getPropAsList(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
+    if (previousSourceState != null && previousSourceState.contains(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT)) {
+      prevFsSnapshot = previousSourceState.getPropAsList(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
     }
 
     // Get list of files that need to be pulled
@@ -120,13 +118,13 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
 
       int workUnitCount = 0;
 
+      // Eventually these setters should be integrated with framework support for generalized watermark handling
+      state.setProp(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT, StringUtils.join(currentFsSnapshot, ","));
+
       // Distribute the files across the workunits
       for (int fileOffset = 0; fileOffset < filesToPull.size(); fileOffset += filesPerPartition) {
         SourceState partitionState = new SourceState();
         partitionState.addAll(state);
-
-        // Eventually these setters should be integrated with framework support for generalized watermark handling
-        partitionState.setProp(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT, StringUtils.join(currentFsSnapshot, ","));
 
         List<String> partitionFilesToPull = filesToPull.subList(fileOffset,
             fileOffset + filesPerPartition > filesToPull.size() ? filesToPull.size() : fileOffset + filesPerPartition);
