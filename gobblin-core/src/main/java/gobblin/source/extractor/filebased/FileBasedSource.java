@@ -29,7 +29,6 @@ import com.google.common.collect.Lists;
 import gobblin.configuration.ConfigurationKeys;
 import gobblin.configuration.SourceState;
 import gobblin.configuration.State;
-import gobblin.configuration.WorkUnitState;
 import gobblin.source.workunit.Extract;
 import gobblin.source.workunit.WorkUnit;
 import gobblin.source.workunit.Extract.TableType;
@@ -104,9 +103,10 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
 
     List<WorkUnit> workUnits = Lists.newArrayList();
     if (!filesToPull.isEmpty()) {
-      log.info("Will pull the following files in this run: " + Arrays.toString(filesToPull.toArray()));
 
-      int numPartitions = state.contains((ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS))
+      logFilesToPull(filesToPull);
+
+      int numPartitions = state.contains(ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS)
           && state.getPropAsInt(ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS) <= filesToPull.size() ? state
           .getPropAsInt(ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS) : filesToPull.size();
       if (numPartitions <= 0) {
@@ -117,9 +117,6 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
           filesToPull.size() / numPartitions : filesToPull.size() / numPartitions + 1;
 
       int workUnitCount = 0;
-
-      // Eventually these setters should be integrated with framework support for generalized watermark handling
-      state.setProp(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT, StringUtils.join(currentFsSnapshot, ","));
 
       // Distribute the files across the workunits
       for (int fileOffset = 0; fileOffset < filesToPull.size(); fileOffset += filesPerPartition) {
@@ -144,6 +141,11 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
         workUnitCount++;
       }
 
+      // Eventually these setters should be integrated with framework support for generalized watermark handling
+      // NOTE: Allowing this property to be copied to each workunit can cause memory issues when the snapshot is huge.
+      // As a short term workaround, assign this to the state after all of the workunits are created.
+      state.setProp(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT, StringUtils.join(currentFsSnapshot, ","));
+
       log.info("Total number of work units for the current run: " + workUnitCount);
     }
 
@@ -154,7 +156,7 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
     return workUnits;
   }
 
-  /**
+    /**
    * This method is responsible for connecting to the source and taking
    * a snapshot of the folder where the data is present, it then returns
    * a list of the files in String format
@@ -193,4 +195,14 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
 
   public abstract void initFileSystemHelper(State state)
       throws FileBasedHelperException;
+
+  private void logFilesToPull(List<String> filesToPull) {
+    int filesToLog = Math.min(2000, filesToPull.size());
+    String remainingString = "";
+    if (filesToLog < filesToPull.size()) {
+      remainingString = "and " + (filesToPull.size() - filesToLog) + "more ";
+    }
+    log.info(String.format("Will pull the following files %sin this run: %s", remainingString,
+            Arrays.toString(filesToPull.subList(0, filesToLog).toArray())));
+  }
 }
