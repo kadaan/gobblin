@@ -72,8 +72,13 @@ public class State implements Writable {
    * @param otherState the other {@link State} instance
    */
   public void addAll(State otherState) {
-    addAll(otherState.properties);
+    for (Map.Entry<Object,Object> e : otherState.properties.entrySet()) {
+      if (!ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT.equals(e.getKey())) {
+        this.properties.put(e.getKey(), e.getValue());
+      }
+    }
   }
+
 
   /**
    * Populates this instance with values of a {@link Properties} instance.
@@ -86,6 +91,10 @@ public class State implements Writable {
         this.properties.put(e.getKey(), e.getValue());
       }
     }
+  }
+
+  protected void addAllNoMatterWhat(State otherState) {
+    this.properties.putAll(otherState.properties);
   }
 
   /**
@@ -470,11 +479,6 @@ public class State implements Writable {
   public void readFields(DataInput in) throws IOException {
     Text txt = new Text();
 
-      boolean hasParent = in.readBoolean();
-      if (hasParent) {
-
-      }
-
     int numEntries = in.readInt();
 
     while (numEntries-- > 0) {
@@ -483,30 +487,21 @@ public class State implements Writable {
       txt.readFields(in);
       String value = txt.toString();
 
-      properties.put(key, value);
+      this.properties.put(key, value);
     }
   }
-private State parent;
+
   @Override
   public void write(DataOutput out) throws IOException {
     Text txt = new Text();
-      out.writeUTF(this.getClass().getName());
+    out.writeInt(this.properties.size());
 
-    if (parent != null) {
-        out.writeBoolean(true);
-        parent.write(out);
-    } else {
-        out.writeBoolean(false);
-    }
-
-    out.writeInt(properties.size());
-
-    for (Object key : properties.keySet()) {
+    for (Object key : this.properties.keySet()) {
 
       txt.set((String) key);
       txt.write(out);
 
-      txt.set(properties.getProperty((String) key));
+      txt.set(this.properties.getProperty((String) key));
       txt.write(out);
     }
   }
