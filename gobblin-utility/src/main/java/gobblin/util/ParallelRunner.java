@@ -24,7 +24,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 
 import org.apache.hadoop.fs.FileAlreadyExistsException;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
@@ -158,27 +157,24 @@ public class ParallelRunner implements Closeable {
         attemptWithRetries(new Callable<Void>() {
           @Override
           public Void call() throws Exception {
-            FileStatus status = fs.getFileStatus(inputFilePath);
-            if (status.getLen() > 0) {
-              Closer closer = Closer.create();
-              try {
-                @SuppressWarnings("deprecation")
-                SequenceFile.Reader reader = closer.register(new SequenceFile.Reader(fs, inputFilePath, fs.getConf()));
-                Writable key = keyClass.newInstance();
-                T state = stateClass.newInstance();
-                while (reader.next(key, state)) {
-                  states.add(state);
-                  state = stateClass.newInstance();
-                }
-
-                if (deleteAfter) {
-                  HadoopUtils.deletePath(fs, inputFilePath, false);
-                }
-              } catch (Throwable t) {
-                throw closer.rethrow(t);
-              } finally {
-                closer.close();
+            Closer closer = Closer.create();
+            try {
+              @SuppressWarnings("deprecation")
+              SequenceFile.Reader reader = closer.register(new SequenceFile.Reader(fs, inputFilePath, fs.getConf()));
+              Writable key = keyClass.newInstance();
+              T state = stateClass.newInstance();
+              while (reader.next(key, state)) {
+                states.add(state);
+                state = stateClass.newInstance();
               }
+
+              if (deleteAfter) {
+                HadoopUtils.deletePath(fs, inputFilePath, false);
+              }
+            } catch (Throwable t) {
+              throw closer.rethrow(t);
+            } finally {
+              closer.close();
             }
             return null;
           }
