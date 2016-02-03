@@ -12,7 +12,6 @@
 
 package gobblin.runtime;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
@@ -144,12 +143,12 @@ public class TaskStateCollectorService extends AbstractScheduledService {
         return;
       }
 
-      LOGGER.info("Found " + fileStatuses.length + " output task state files: " +
-              Joiner.on(File.pathSeparator)
+      LOGGER.info("Found " + fileStatuses.length + " output task state files: " + System.lineSeparator() +
+              Joiner.on(System.lineSeparator())
                       .join(Iterables.transform(Arrays.asList(fileStatuses), new Function<FileStatus, String>() {
                         @Override
                         public String apply(FileStatus fileStatus) {
-                          return fileStatus.getPath().toString();
+                          return fileStatus.toString();
                         }
                       })));
 
