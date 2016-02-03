@@ -55,6 +55,10 @@ public class State implements Writable {
     this.properties = properties;
   }
 
+  public State(State otherState) {
+    this.properties = otherState.getProperties();
+  }
+
   /**
    * Return a copy of the underlying {@link Properties} object.
    *
