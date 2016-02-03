@@ -12,11 +12,17 @@
 
 package gobblin.runtime;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.Queue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -59,6 +65,8 @@ public class TaskStateCollectorService extends AbstractScheduledService {
   private final int outputTaskStatesCollectorIntervalSeconds;
 
   private final Path outputTaskStateDir;
+
+  private final Semaphore mutex = new Semaphore(1, true);
 
   public TaskStateCollectorService(Properties jobProps, JobState jobState, EventBus eventBus, FileSystem fs,
       Path outputTaskStateDir) {
@@ -117,42 +125,56 @@ public class TaskStateCollectorService extends AbstractScheduledService {
    * @throws IOException if it fails to collect the output {@link TaskState}s
    */
   private void collectOutputTaskStates()
-      throws IOException {
-    if (!this.fs.exists(this.outputTaskStateDir)) {
-      LOGGER.warn(String.format("Output task state path %s does not exist", this.outputTaskStateDir));
-      return;
-    }
-
-    FileStatus[] fileStatuses = this.fs.listStatus(this.outputTaskStateDir, new PathFilter() {
-      @Override
-      public boolean accept(Path path) {
-        return path.getName().endsWith(AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX);
+        throws IOException, InterruptedException {
+    mutex.acquire();
+    try {
+      if (!this.fs.exists(this.outputTaskStateDir)) {
+        LOGGER.warn(String.format("Output task state path %s does not exist", this.outputTaskStateDir));
+        return;
       }
-    });
-    if (fileStatuses == null || fileStatuses.length == 0) {
-      LOGGER.warn("No output task state files found in " + this.outputTaskStateDir);
-      return;
-    }
 
-    Queue<TaskState> taskStateQueue = Queues.newConcurrentLinkedQueue();
-    try (ParallelRunner stateSerDeRunner = new ParallelRunner(stateSerDeRunnerThreads, this.fs)) {
-      for (FileStatus status : fileStatuses) {
-        LOGGER.info("Found output task state file " + status.getPath());
-        // Deserialize the TaskState and delete the file
-        stateSerDeRunner.deserializeFromSequenceFile(Text.class, TaskState.class, status.getPath(),
-            taskStateQueue, true);
+      FileStatus[] fileStatuses = this.fs.listStatus(this.outputTaskStateDir, new PathFilter() {
+        @Override
+        public boolean accept(Path path) {
+          return path.getName().endsWith(AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX);
+        }
+      });
+      if (fileStatuses == null || fileStatuses.length == 0) {
+        LOGGER.warn("No output task state files found in " + this.outputTaskStateDir);
+        return;
       }
+
+      LOGGER.info("Found " + fileStatuses.length + " output task state files: " +
+              Joiner.on(File.pathSeparator)
+                      .join(Iterables.transform(Arrays.asList(fileStatuses), new Function<FileStatus, String>() {
+                        @Override
+                        public String apply(FileStatus fileStatus) {
+                          return fileStatus.getPath().toString();
+                        }
+                      })));
+
+      Queue<TaskState> taskStateQueue = Queues.newConcurrentLinkedQueue();
+      try (ParallelRunner stateSerDeRunner = new ParallelRunner(stateSerDeRunnerThreads, this.fs)) {
+        for (FileStatus status : fileStatuses) {
+          LOGGER.info("Found output task state file " + status.getPath());
+          // Deserialize the TaskState and delete the file
+          stateSerDeRunner.deserializeFromSequenceFile(Text.class, TaskState.class, status.getPath(),
+                  taskStateQueue, true);
+        }
+      }
+
+      LOGGER.info(String.format("Collected task state of %d completed tasks", taskStateQueue.size()));
+
+      // Add the TaskStates of completed tasks to the JobState so when the control
+      // returns to the launcher, it sees the TaskStates of all completed tasks.
+      for (TaskState taskState : taskStateQueue) {
+        this.jobState.addTaskState(taskState);
+      }
+
+      // Notify the listeners for the completion of the tasks
+      this.eventBus.post(new NewTaskCompletionEvent(ImmutableList.copyOf(taskStateQueue)));
+    } finally {
+        mutex.release();
     }
-
-    LOGGER.info(String.format("Collected task state of %d completed tasks", taskStateQueue.size()));
-
-    // Add the TaskStates of completed tasks to the JobState so when the control
-    // returns to the launcher, it sees the TaskStates of all completed tasks.
-    for (TaskState taskState : taskStateQueue) {
-      this.jobState.addTaskState(taskState);
-    }
-
-    // Notify the listeners for the completion of the tasks
-    this.eventBus.post(new NewTaskCompletionEvent(ImmutableList.copyOf(taskStateQueue)));
   }
 }
