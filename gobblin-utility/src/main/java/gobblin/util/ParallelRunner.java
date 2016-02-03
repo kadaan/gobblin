@@ -291,11 +291,17 @@ public class ParallelRunner implements Closeable {
   public void close() throws IOException {
     // Wait for all submitted tasks to complete
     try {
+      boolean wasInterrupted = false;
       IOException exception = null;
       for (Future<?> future : this.futures) {
         try {
-          future.get();
+          if (wasInterrupted) {
+            future.cancel(true);
+          } else {
+            future.get();
+          }
         } catch (InterruptedException ie) {
+          wasInterrupted = true;
           if (exception == null) {
             exception = new IOException(ie);
           }
