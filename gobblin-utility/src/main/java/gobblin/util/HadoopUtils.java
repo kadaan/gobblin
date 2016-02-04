@@ -137,7 +137,7 @@ public class HadoopUtils {
    * if {@link FileUtil#copy(FileSystem, Path, FileSystem, Path, boolean, Configuration)} returns false.
    */
   public static void copyPath(FileSystem fs, Path src, Path dst) throws IOException {
-    if (!FileUtil.copy(fs, src, fs, dst, false, fs.getConf())) {
+    if (!FileUtil.copy(fs, src, fs, dst, false, true, fs.getConf())) {
       throw new IOException(String.format("Failed to copy %s to %s", src, dst));
     }
   }
@@ -152,7 +152,7 @@ public class HadoopUtils {
     if (srcFs.getUri().equals(dstFs.getUri())) {
       renamePath(srcFs, src, dst);
     } else {
-      if (!FileUtil.copy(srcFs, src, dstFs, dst, true, false, dstFs.getConf())) {
+      if (!FileUtil.copy(srcFs, src, dstFs, dst, true, true, dstFs.getConf())) {
         throw new IOException(String.format("Failed to move %s to %s", src, dst));
       }
     }
