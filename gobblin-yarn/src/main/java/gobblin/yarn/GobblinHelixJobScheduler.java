@@ -118,7 +118,12 @@ public class GobblinHelixJobScheduler extends JobScheduler {
       Properties jobConfig = new Properties();
       jobConfig.putAll(this.properties);
       jobConfig.putAll(newJobArrival.getJobConfig());
-      if (jobConfig.containsKey(ConfigurationKeys.JOB_SCHEDULE_KEY)) {
+      if (jobConfig.containsKey(ConfigurationKeys.JOB_SCHEDULE_KEY)
+              && jobConfig.getProperty(ConfigurationKeys.JOB_SCHEDULE_KEY).equalsIgnoreCase("continuous")) {
+        LOGGER.info("Running " + newJobArrival.getJobName() + " continuously");
+        this.jobExecutor.execute(new ContinuousJobRunner(jobConfig, null));
+      }
+      else if (jobConfig.containsKey(ConfigurationKeys.JOB_SCHEDULE_KEY)) {
         LOGGER.info("Scheduling new job " + newJobArrival.getJobName());
         scheduleJob(newJobArrival.getJobConfig(), null);
       } else {
@@ -127,6 +132,31 @@ public class GobblinHelixJobScheduler extends JobScheduler {
       }
     } catch (JobException je) {
       LOGGER.error("Failed to schedule or run job " + newJobArrival.getJobName());
+    }
+  }
+
+  /**
+   * This class is responsible for running non-scheduled jobs.
+   */
+  class ContinuousJobRunner implements Runnable {
+
+    private final Properties jobConfig;
+    private final JobListener jobListener;
+
+    public ContinuousJobRunner(Properties jobConfig, JobListener jobListener) {
+      this.jobConfig = jobConfig;
+      this.jobListener = jobListener;
+    }
+
+    @Override
+    public void run() {
+      try {
+        while (true) {
+          GobblinHelixJobScheduler.this.runJob(this.jobConfig, this.jobListener);
+        }
+      } catch (JobException je) {
+        LOGGER.error("Failed to run job " + this.jobConfig.getProperty(ConfigurationKeys.JOB_NAME_KEY), je);
+      }
     }
   }
 
