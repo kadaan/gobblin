@@ -153,6 +153,9 @@ public class JobListeners {
             }
           }
         }
+        if (wasInterrupted) {
+          Thread.currentThread().interrupt();
+        }
         if (exception != null) {
           throw exception;
         }
