@@ -1,4 +1,4 @@
--- Copyright (C) 2014-2015 LinkedIn Corp. All rights reserved.
+-- Copyright (C) 2014-2016 LinkedIn Corp. All rights reserved.
 --
 -- Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 -- this file except in compliance with the License. You may obtain a copy of the
@@ -8,8 +8,6 @@
 -- under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 -- CONDITIONS OF ANY KIND, either express or implied.
 
-
--- MySQL DDL for the tables needed by the Gobblin job history store.
 
 CREATE TABLE IF NOT EXISTS gobblin_job_executions (
 	job_name VARCHAR(128) NOT NULL,
@@ -67,7 +65,9 @@ CREATE TABLE IF NOT EXISTS gobblin_job_metrics (
 	FOREIGN KEY (job_id)
 	REFERENCES gobblin_job_executions(job_id)
 	ON DELETE CASCADE,
-	UNIQUE INDEX ux_job_metric (job_id, metric_group, metric_name, metric_type)
+	INDEX (metric_group),
+	INDEX (metric_name),
+	INDEX (metric_type)
 );
 
 CREATE TABLE IF NOT EXISTS gobblin_task_metrics (
@@ -83,7 +83,9 @@ CREATE TABLE IF NOT EXISTS gobblin_task_metrics (
 	FOREIGN KEY (task_id)
 	REFERENCES gobblin_task_executions(task_id)
 	ON DELETE CASCADE,
-	UNIQUE INDEX ux_task_metric (task_id, metric_group, metric_name, metric_type)
+	INDEX (metric_group),
+	INDEX (metric_name),
+	INDEX (metric_type)
 );
 
 CREATE TABLE IF NOT EXISTS gobblin_job_properties (
@@ -97,7 +99,7 @@ CREATE TABLE IF NOT EXISTS gobblin_job_properties (
 	FOREIGN KEY (job_id)
 	REFERENCES gobblin_job_executions(job_id)
 	ON DELETE CASCADE,
-	UNIQUE INDEX ux_job_property (job_id, property_key)
+	INDEX (property_key)
 );
 
 CREATE TABLE IF NOT EXISTS gobblin_task_properties (
@@ -111,5 +113,5 @@ CREATE TABLE IF NOT EXISTS gobblin_task_properties (
 	FOREIGN KEY (task_id)
 	REFERENCES gobblin_task_executions(task_id)
 	ON DELETE CASCADE,
-	UNIQUE INDEX ux_task_property (task_id, property_key)
+	INDEX (property_key)
 );
