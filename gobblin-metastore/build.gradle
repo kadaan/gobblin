@@ -19,14 +19,19 @@ dependencies {
     compile externalDependency.slf4j
     compile externalDependency.pegasus.data
     compile externalDependency.commonsDbcp
+    compile externalDependency.commonsLang
     compile externalDependency.guice
     compile externalDependency.javaxInject
     compile externalDependency.jodaTime
-    
+    compile externalDependency.httpclient
+    compile externalDependency.embeddedProcess
+    compile externalDependency.testMysqlServer
+    compile externalDependency.flyway
+    compile externalDependency.commonsConfiguration
+
     runtime externalDependency.mysqlConnector
 
     testCompile externalDependency.testng
-    testRuntime externalDependency.derby
 }
 
 // Begin HACK to get around POM being depenendent on the (empty) gobblin-rest-api instead of gobblin-rest-api-rest-client

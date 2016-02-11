@@ -32,6 +32,9 @@ import java.util.TimeZone;
 
 import javax.sql.DataSource;
 
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
+import org.flywaydb.core.api.MigrationVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +75,7 @@ import gobblin.rest.TimeRange;
 public class DatabaseJobHistoryStore implements JobHistoryStore {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseJobHistoryStore.class);
+  private static MigrationVersion MINIMUM_VERSION = MigrationVersion.fromVersion("1.0.2");
 
   private static final String JOB_EXECUTION_UPSERT_STATEMENT_TEMPLATE =
       "INSERT INTO gobblin_job_executions (job_name,job_id,start_time,end_time,duration,state,"
@@ -145,14 +149,27 @@ public class DatabaseJobHistoryStore implements JobHistoryStore {
 
   private final DataSource dataSource;
 
+  private final boolean isDatabaseUpToDate;
+
   @Inject
   public DatabaseJobHistoryStore(DataSource dataSource) {
     this.dataSource = dataSource;
+    this.isDatabaseUpToDate = isAtLeastVersion(dataSource, MINIMUM_VERSION);
+    if (!this.isDatabaseUpToDate) {
+      LOGGER.warn(String.format("%s is disabled because the database version is not at least %s. " +
+              "Verify and migrate the database state using the historystore-manager:\n" +
+              "    Verify: './historystore-manager.sh info -Durl=\"<URL>\" -Duser=\"<USER>\" -Dpassword=\"<PASSWORD>\"' " +
+              "    Migrate: './historystore-manager.sh migrate -Durl=\"<URL>\" -Duser=\"<USER>\" -Dpassword=\"<PASSWORD>\"'",
+              this.getClass().getSimpleName(), MINIMUM_VERSION));
+    }
   }
 
   @Override
   public synchronized void put(JobExecutionInfo jobExecutionInfo)
       throws IOException {
+    if (!isDatabaseUpToDate) {
+      return;
+    }
     Optional<Connection> connectionOptional = Optional.absent();
     try {
       connectionOptional = Optional.of(getConnection());
@@ -202,6 +219,9 @@ public class DatabaseJobHistoryStore implements JobHistoryStore {
       throws IOException {
     Preconditions.checkArgument(query.hasId() && query.hasIdType());
 
+    if (!isDatabaseUpToDate) {
+      return Lists.newArrayList();
+    }
     Optional<Connection> connectionOptional = Optional.absent();
     try {
       connectionOptional = Optional.of(getConnection());
@@ -243,6 +263,16 @@ public class DatabaseJobHistoryStore implements JobHistoryStore {
   public void close()
       throws IOException {
     // Nothing to do
+  }
+
+  private static boolean isAtLeastVersion(DataSource dataSource, MigrationVersion version) {
+    try {
+      Flyway flyway = new Flyway();
+      flyway.setDataSource(dataSource);
+      return flyway.info().current().getVersion().compareTo(version) >= 0;
+    } catch (FlywayException ignored) {
+      return false;
+    }
   }
 
   private Connection getConnection()
