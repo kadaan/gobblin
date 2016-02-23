@@ -14,12 +14,15 @@ package gobblin.yarn;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -40,12 +43,11 @@ import org.apache.helix.manager.zk.ZKHelixManager;
 import org.apache.helix.model.HelixConfigScope;
 import org.apache.helix.tools.ClusterSetup;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigValue;
-
+import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 
-import gobblin.configuration.State;
+import gobblin.util.PortUtils;
 
 
 /**
@@ -54,6 +56,10 @@ import gobblin.configuration.State;
  * @author Yinan Li
  */
 public class YarnHelixUtils {
+
+  private static final Joiner JOINER = Joiner.on(" ").skipNulls();
+
+  private static final PortUtils PORT_UTILS = new PortUtils();
 
   /**
    * Create a Helix cluster for the Gobblin Yarn application.
@@ -198,5 +204,27 @@ public class YarnHelixUtils {
     }
 
     return environmentVariableMap;
+  }
+
+  /**
+   * Gets the input arguments passed to the JVM.
+   * @return The input arguments.
+   */
+  public static String getJvmInputArguments() {
+    RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+    List<String> arguments = runtimeMxBean.getInputArguments();
+    return String.format("JVM Input Arguments: %s", JOINER.join(arguments));
+  }
+
+  /**
+   * Formats the specified jvm arguments such that any tokens are replaced with concrete values;
+   * @param jvmArguments
+   * @return The formatted jvm arguments.
+   */
+  public static String formatJvmArguments(Optional<String> jvmArguments) {
+    if (jvmArguments.isPresent()) {
+      return PORT_UTILS.replacePortTokens(jvmArguments.get());
+    }
+    return StringUtils.EMPTY;
   }
 }

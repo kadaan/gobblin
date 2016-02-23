@@ -628,7 +628,7 @@ public class GobblinYarnAppLauncher {
     return new StringBuilder()
         .append(ApplicationConstants.Environment.JAVA_HOME.$()).append("/bin/java")
         .append(" -Xmx").append(memoryMbs).append("M")
-        .append(" ").append(this.appMasterJvmArgs.or(""))
+        .append(" ").append(YarnHelixUtils.formatJvmArguments(this.appMasterJvmArgs))
         .append(" ").append(GobblinApplicationMaster.class.getName())
         .append(" --").append(GobblinYarnConfigurationKeys.APPLICATION_NAME_OPTION_NAME)
         .append(" ").append(this.applicationName)

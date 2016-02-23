@@ -400,7 +400,7 @@ public class YarnService extends AbstractIdleService {
     return new StringBuilder()
         .append(ApplicationConstants.Environment.JAVA_HOME.$()).append("/bin/java")
         .append(" -Xmx").append(container.getResource().getMemory()).append("M")
-        .append(" ").append(this.containerJvmArgs.or(""))
+        .append(" ").append(YarnHelixUtils.formatJvmArguments(this.containerJvmArgs))
         .append(" ").append(GobblinWorkUnitRunner.class.getName())
         .append(" --").append(GobblinYarnConfigurationKeys.APPLICATION_NAME_OPTION_NAME)
         .append(" ").append(this.applicationName)
