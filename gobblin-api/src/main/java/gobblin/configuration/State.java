@@ -16,6 +16,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -80,8 +81,13 @@ public class State implements Writable {
    * @param otherState the other {@link State} instance
    */
   public void addAll(State otherState) {
-    this.properties.putAll(otherState.properties);
+    for (Map.Entry<Object,Object> e : otherState.properties.entrySet()) {
+      if (!ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT.equals(e.getKey())) {
+        this.properties.put(e.getKey(), e.getValue());
+      }
+    }
   }
+
 
   /**
    * Populates this instance with values of a {@link Properties} instance.
@@ -89,7 +95,15 @@ public class State implements Writable {
    * @param properties a {@link Properties} instance
    */
   public void addAll(Properties properties) {
-    this.properties.putAll(properties);
+    for (Map.Entry<Object,Object> e : properties.entrySet()) {
+      if (!ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT.equals(e.getKey())) {
+        this.properties.put(e.getKey(), e.getValue());
+      }
+    }
+  }
+
+  protected void addAllNoMatterWhat(State otherState) {
+    this.properties.putAll(otherState.properties);
   }
 
   /**
@@ -492,20 +506,21 @@ public class State implements Writable {
       txt.readFields(in);
       String value = txt.toString();
 
-      properties.put(key, value);
+      this.properties.put(key, value);
     }
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
     Text txt = new Text();
-    out.writeInt(properties.size());
+    out.writeInt(this.properties.size());
 
-    for (Object key : properties.keySet()) {
+    for (Object key : this.properties.keySet()) {
+
       txt.set((String) key);
       txt.write(out);
 
-      txt.set(properties.getProperty((String) key));
+      txt.set(this.properties.getProperty((String) key));
       txt.write(out);
     }
   }

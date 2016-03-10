@@ -31,7 +31,6 @@ import com.google.common.collect.Lists;
 import gobblin.configuration.ConfigurationKeys;
 import gobblin.configuration.SourceState;
 import gobblin.configuration.State;
-import gobblin.configuration.WorkUnitState;
 import gobblin.source.workunit.Extract;
 import gobblin.source.workunit.WorkUnit;
 import gobblin.source.workunit.Extract.TableType;
@@ -92,14 +91,12 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
     }
 
     TableType tableType = TableType.valueOf(state.getProp(ConfigurationKeys.EXTRACT_TABLE_TYPE_KEY).toUpperCase());
-    List<WorkUnitState> previousWorkunits = Lists.newArrayList(state.getPreviousWorkUnitStates());
+    SourceState previousSourceState = state.getPreviousSourceState();
     List<String> prevFsSnapshot = Lists.newArrayList();
 
-   // Get list of files seen in the previous run
-    if (!previousWorkunits.isEmpty()
-        && previousWorkunits.get(0).getWorkunit().contains(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT)) {
-      prevFsSnapshot =
-          previousWorkunits.get(0).getWorkunit().getPropAsList(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
+    // Get list of files seen in the previous run
+    if (previousSourceState != null && previousSourceState.contains(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT)) {
+      prevFsSnapshot = previousSourceState.getPropAsList(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
     }
 
     // Get list of files that need to be pulled
@@ -115,9 +112,10 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
 
     List<WorkUnit> workUnits = Lists.newArrayList();
     if (!filesToPull.isEmpty()) {
-      log.info("Will pull the following files in this run: " + Arrays.toString(filesToPull.toArray()));
 
-      int numPartitions = state.contains((ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS))
+      logFilesToPull(filesToPull);
+
+      int numPartitions = state.contains(ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS)
           && state.getPropAsInt(ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS) <= filesToPull.size() ? state
           .getPropAsInt(ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS) : filesToPull.size();
       if (numPartitions <= 0) {
@@ -133,9 +131,6 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
       for (int fileOffset = 0; fileOffset < filesToPull.size(); fileOffset += filesPerPartition) {
         SourceState partitionState = new SourceState();
         partitionState.addAll(state);
-
-        // Eventually these setters should be integrated with framework support for generalized watermark handling
-        partitionState.setProp(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT, StringUtils.join(currentFsSnapshot, ","));
 
         List<String> partitionFilesToPull = filesToPull.subList(fileOffset,
             fileOffset + filesPerPartition > filesToPull.size() ? filesToPull.size() : fileOffset + filesPerPartition);
@@ -154,6 +149,11 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
         workUnits.add(partitionState.createWorkUnit(extract));
         workUnitCount++;
       }
+
+      // Eventually these setters should be integrated with framework support for generalized watermark handling
+      // NOTE: Allowing this property to be copied to each workunit can cause memory issues when the snapshot is huge.
+      // As a short term workaround, assign this to the state after all of the workunits are created.
+      state.setProp(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT, StringUtils.join(currentFsSnapshot, ","));
 
       log.info("Total number of work units for the current run: " + workUnitCount);
     }
@@ -206,4 +206,14 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
 
   public abstract void initFileSystemHelper(State state)
       throws FileBasedHelperException;
+
+  private void logFilesToPull(List<String> filesToPull) {
+    int filesToLog = Math.min(2000, filesToPull.size());
+    String remainingString = "";
+    if (filesToLog < filesToPull.size()) {
+      remainingString = "and " + (filesToPull.size() - filesToLog) + "more ";
+    }
+    log.info(String.format("Will pull the following files %sin this run: %s", remainingString,
+            Arrays.toString(filesToPull.subList(0, filesToLog).toArray())));
+  }
 }
