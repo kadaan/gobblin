@@ -366,17 +366,17 @@ subprojects {
     plugins.apply('idea')
     plugins.apply('eclipse')
     plugins.apply('maven')
-    plugins.apply('findbugs')
-
-    sourceCompatibility = JavaVersion.VERSION_1_7
-
-    findbugs {
-      toolVersion = findBugsVersion
-      ignoreFailures = true
-      effort = "max"
-      // The exclude filter file must be under "ligradle/findbugs/"
-      excludeFilter = file(rootProject.projectDir.path + "/ligradle/findbugs/findbugsExclude.xml")
+    if (!project.hasProperty('disableFindbugs')) {
+      plugins.apply('findbugs')
+      findbugs {
+        toolVersion = findBugsVersion
+        ignoreFailures = true
+        effort = "max"
+        // The exclude filter file must be under "ligradle/findbugs/"
+        excludeFilter = file(rootProject.projectDir.path + "/ligradle/findbugs/findbugsExclude.xml")
+      }
     }
+    sourceCompatibility = JavaVersion.VERSION_1_7
 
     test {
       if (project.hasProperty("printTestOutput")) {
@@ -556,4 +556,3 @@ task dotProjectDependencies(description: 'List of gobblin project dependencies i
   println "}"
   println "// ========= End of project dependency graph ======= "
 }
-
