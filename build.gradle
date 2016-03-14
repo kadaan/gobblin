@@ -216,7 +216,10 @@ ext.externalDependency = [
           "org.eclipse.jetty:jetty-servlet:9.2.14.v20151106"
   ],
   "servlet-api": "javax.servlet:servlet-api:3.1.0",
-  "reflections" : "org.reflections:reflections:0.9.9"
+  "reflections" : "org.reflections:reflections:0.9.9",
+  "embeddedProcess": "de.flapdoodle.embed:de.flapdoodle.embed.process:1.50.1",
+  "testMysqlServer": "com.wix:wix-embedded-mysql:1.0.3",
+  "flyway": "org.flywaydb:flyway-core:3.2.1"
 ];
 
 if (!isDefaultEnvironment)
