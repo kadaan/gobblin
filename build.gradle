@@ -498,18 +498,19 @@ subprojects {
     plugins.apply('idea')
     plugins.apply('eclipse')
     plugins.apply('maven')
-    plugins.apply('findbugs')
+    if (!project.hasProperty('disableFindbugs')) {
+      plugins.apply('findbugs')
+      findbugs {
+        toolVersion = findBugsVersion
+        ignoreFailures = false
+        effort = "max"
+        sourceSets = [sourceSets.main] // Only analyze src/java/main, not src/java/test/
+        // The exclude filter file must be under "ligradle/findbugs/" for internal compatibility with ligradle FindBugs
+        excludeFilter = file(rootProject.projectDir.path + "/ligradle/findbugs/findbugsExclude.xml")
+      }
+    }
 
     sourceCompatibility = javaVersion
-
-    findbugs {
-      toolVersion = findBugsVersion
-      ignoreFailures = false
-      effort = "max"
-      sourceSets = [sourceSets.main] // Only analyze src/java/main, not src/java/test/
-      // The exclude filter file must be under "ligradle/findbugs/" for internal compatibility with ligradle FindBugs
-      excludeFilter = file(rootProject.projectDir.path + "/ligradle/findbugs/findbugsExclude.xml")
-    }
 
     test {
       if (project.hasProperty("printTestOutput")) {
