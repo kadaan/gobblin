@@ -39,7 +39,9 @@ import org.apache.hadoop.fs.FileAlreadyExistsException;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.Writable;
@@ -274,7 +276,14 @@ public class HadoopUtils {
             String.format("Cannot copy from %s to %s because dst exists", src, dst));
 
     try {
-      if (!FileUtil.copy(srcFs, src, dstFs, dst, deleteSource, overwrite, conf)) {
+      boolean isSourceFileSystemLocal = srcFs instanceof LocalFileSystem || srcFs instanceof RawLocalFileSystem;
+      if (isSourceFileSystemLocal) {
+        try {
+          dstFs.copyFromLocalFile(deleteSource, overwrite, src, dst);
+        } catch (IOException e) {
+          throw new IOException(String.format("Failed to copy %s to %s", src, dst), e);
+        }
+      } else if (!FileUtil.copy(srcFs, src, dstFs, dst, deleteSource, overwrite, conf)) {
         throw new IOException(String.format("Failed to copy %s to %s", src, dst));
       }
     } catch (Throwable t1) {
