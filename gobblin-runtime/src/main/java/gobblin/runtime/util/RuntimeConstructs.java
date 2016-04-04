@@ -12,7 +12,7 @@
 
 package gobblin.runtime.util;
 
-import gobblin.runtime.Fork;
+import gobblin.runtime.fork.Fork;
 
 
 public enum RuntimeConstructs {
