@@ -78,6 +78,7 @@ public class TaskState extends WorkUnitState {
 
   private String jobId;
   private String taskId;
+  private String taskKey;
   private long startTime = 0;
   private long endTime = 0;
   private long duration;
@@ -93,6 +94,7 @@ public class TaskState extends WorkUnitState {
     addAll(workUnitState);
     this.jobId = workUnitState.getProp(ConfigurationKeys.JOB_ID_KEY);
     this.taskId = workUnitState.getProp(ConfigurationKeys.TASK_ID_KEY);
+    this.taskKey = workUnitState.getProp(ConfigurationKeys.TASK_KEY_KEY);
     this.setId(this.taskId);
   }
 
@@ -120,6 +122,15 @@ public class TaskState extends WorkUnitState {
    */
   public void setJobId(String jobId) {
     this.jobId = jobId;
+  }
+
+  /**
+   * Get the sequence number of the task this {@link TaskState} is for.
+   *
+   * @return Sequence number of the task this {@link TaskState} is for
+   */
+  public String getTaskKey() {
+    return this.taskKey;
   }
 
   /**

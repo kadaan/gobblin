@@ -21,8 +21,9 @@ dependencies {
     compile externalDependency.lombok
     compile externalDependency.commonsIo
 
+    runtime externalDependency.logback
+
     testCompile externalDependency.testng
-    testCompile externalDependency.log4j
 }
 
 configurations {

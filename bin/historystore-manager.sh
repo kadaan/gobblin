@@ -13,6 +13,7 @@
 #!/bin/bash
 
 FWDIR="$(cd `dirname $0`/..; pwd)"
+FWDIR_CONF=${FWDIR}/conf
 
 GOBBLIN_JARS=""
 for jar in $(ls -d $FWDIR/lib/*); do
@@ -24,7 +25,7 @@ for jar in $(ls -d $FWDIR/lib/*); do
 done
 
 CLASSPATH=$GOBBLIN_JARS
-CLASSPATH+=":$FWDIR/conf"
+CLASSPATH+=":$FWDIR_CONF"
 
 if [[ $# -gt 0 ]]; then
   action=$1
@@ -51,4 +52,8 @@ do
   index=$((index+1))
 done
 
-java "${options[@]}" -cp $CLASSPATH gobblin.metastore.util.DatabaseJobHistoryStoreSchemaManager $action "${args[@]}"
+java "${options[@]}" \
+    -Dlogback.configurationFile=file://$FWDIR_CONF/logback-gobblin.xml \
+    -cp $CLASSPATH gobblin.metastore.util.DatabaseJobHistoryStoreSchemaManager \
+    $action \
+    "${args[@]}"

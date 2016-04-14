@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import gobblin.util.JobId;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.commons.io.monitor.FileAlterationListener;
@@ -45,6 +46,7 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -326,12 +328,10 @@ public class JobScheduler extends AbstractIdleService {
       return;
     }
 
-    // Populate the assigned job ID
-    jobProps.setProperty(ConfigurationKeys.JOB_ID_KEY, JobLauncherUtils.newJobId(jobName));
-
     Closer closer = Closer.create();
     // Launch the job
     try {
+      closer.register(MDC.putCloseable(ConfigurationKeys.JOB_NAME_KEY, jobName));
       closer.register(jobLauncher).launchJob(jobListener);
       boolean runOnce = Boolean.valueOf(jobProps.getProperty(ConfigurationKeys.JOB_RUN_ONCE_KEY, "false"));
       if (runOnce && this.scheduledJobs.containsKey(jobName)) {
@@ -498,10 +498,9 @@ public class JobScheduler extends AbstractIdleService {
    * A Gobblin job to be scheduled.
    */
   @DisallowConcurrentExecution
-  public static class GobblinJob implements Job {
-
+  public static class GobblinJob extends BaseGobblinJob {
     @Override
-    public void execute(JobExecutionContext context)
+    public void executeImpl(JobExecutionContext context)
         throws JobExecutionException {
       JobDataMap dataMap = context.getJobDetail().getJobDataMap();
       JobScheduler jobScheduler = (JobScheduler) dataMap.get(JOB_SCHEDULER_KEY);

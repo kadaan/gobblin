@@ -13,7 +13,6 @@
 package gobblin.util;
 
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,6 +29,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import gobblin.util.concurrent.GobblinCallable;
 
 
 /**
@@ -221,9 +222,9 @@ public class ExecutorsUtils {
             TimeUnit.MINUTES);
 
     for (final F l : list) {
-      futures.add(executorService.submit(new Callable<T>() {
+      futures.add(executorService.submit(new GobblinCallable<T>() {
         @Override
-        public T call() throws Exception {
+        public T callImpl() throws Exception {
           return function.apply(l);
         }
       }));

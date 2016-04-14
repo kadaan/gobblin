@@ -14,7 +14,6 @@ package gobblin.util.concurrent;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -75,9 +74,9 @@ public abstract class TaskScheduler<K, T extends ScheduledTask<K>> implements Cl
     Preconditions.checkArgument(isStarted, "TaskScheduler is not started");
     try {
       CancellableTask<K, T> cancellableTask = this.cancellableTaskMap.get(task.getKey(),
-              new Callable<CancellableTask<K, T>>() {
+              new GobblinCallable<CancellableTask<K, T>>() {
                 @Override
-                public CancellableTask<K, T> call() {
+                public CancellableTask<K, T> callImpl() {
                   return scheduleImpl(task, period, unit);
                 }
               });

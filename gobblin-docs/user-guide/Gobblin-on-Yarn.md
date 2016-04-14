@@ -173,6 +173,7 @@ In additional to the common Gobblin configuration properties, documented in [`Co
 |`helix.instance.max.retries`|2|Maximum number of times the application tries to restart a failed Helix instance (corresponding to a Yarn container).|
 |`gobblin.yarn.lib.jars.dir`||The directory where library jars are stored, typically `gobblin-dist/lib`.|
 |`gobblin.yarn.job.conf.path`||The path to either a directory where Gobblin job configuration files are stored or a single job configuration file. Internally Gobblin Yarn will package the configuration files as a tarball so you don't need to.|
+|`gobblin.yarn.log.config.file`||The name of the logback config file that should be used by the Gobblin ApplicationMaster and Gobblin WorkUnitRunners.|
 |`gobblin.yarn.logs.sink.root.dir`||The directory on local filesystem on the driver/client side where the aggregated container logs of both the ApplicationMaster and WorkUnitRunner are stored.|
 |`gobblin.yarn.keytab.file.path`||The path to the Kerberos keytab file used for keytab-based authentication/login.|
 |`gobblin.yarn.keytab.principal.name`||The principal name of the keytab.|

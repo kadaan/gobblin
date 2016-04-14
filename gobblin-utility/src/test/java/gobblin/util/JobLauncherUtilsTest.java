@@ -47,7 +47,10 @@ public class JobLauncherUtilsTest {
 
   @Test
   public void testNewJobId() {
-    this.jobId = JobLauncherUtils.newJobId(JOB_NAME);
+    JobId jobId = JobLauncherUtils.newJobId(JOB_NAME);
+    Assert.assertEquals(jobId.getJobName(), JOB_NAME);
+    Assert.assertTrue(System.currentTimeMillis() - Long.parseLong(jobId.getSequence()) < 1000);
+    this.jobId = jobId.toString();
     Assert.assertTrue(PATTERN.matcher(this.jobId).matches());
   }
 

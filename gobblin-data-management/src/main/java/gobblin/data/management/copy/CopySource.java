@@ -34,6 +34,7 @@ import gobblin.source.workunit.WorkUnit;
 import gobblin.util.HadoopUtils;
 import gobblin.util.RateControlledFileSystem;
 import gobblin.util.WriterUtils;
+import gobblin.util.concurrent.GobblinRunnable;
 import gobblin.util.executors.ScalingThreadPoolExecutor;
 import gobblin.util.guid.Guid;
 
@@ -166,7 +167,7 @@ public class CopySource extends AbstractSource<String, FileAwareInputStream> {
    * {@link Runnable} to generate copy listing for one {@link CopyableDataset}.
    */
   @AllArgsConstructor
-  private class DatasetWorkUnitGenerator implements Runnable {
+  private class DatasetWorkUnitGenerator extends GobblinRunnable {
 
     private final CopyableDataset copyableDataset;
     private final FileSystem originFs;
@@ -175,7 +176,7 @@ public class CopySource extends AbstractSource<String, FileAwareInputStream> {
     private final ConcurrentBoundedWorkUnitList workUnitList;
     private final CopyConfiguration copyConfiguration;
 
-    @Override public void run() {
+    @Override public void runImpl() {
 
       if (workUnitList.hasRejectedFileSet()) {
         // Stop generating work units the first time the work unit container rejects a file set due to capacity issues.

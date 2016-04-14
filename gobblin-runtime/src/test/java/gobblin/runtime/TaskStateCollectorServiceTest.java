@@ -41,7 +41,7 @@ import gobblin.util.JobLauncherUtils;
 public class TaskStateCollectorServiceTest {
 
   private static final String JOB_NAME = "TestJob";
-  private static final String JOB_ID = JobLauncherUtils.newJobId(JOB_NAME);
+  private static final String JOB_ID = JobLauncherUtils.newJobId(JOB_NAME).toString();
   private static final String TASK_ID_0 = JobLauncherUtils.newTaskId(JOB_ID, 0);
   private static final String TASK_ID_1 = JobLauncherUtils.newTaskId(JOB_ID, 1);
 

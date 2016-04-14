@@ -41,11 +41,12 @@ import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 import org.apache.hadoop.yarn.ipc.YarnRPC;
 import org.apache.hadoop.yarn.util.ConverterUtils;
-import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
 import gobblin.configuration.State;
+
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -57,10 +58,8 @@ import gobblin.configuration.State;
  *
  * @author ziliu
  */
+@Slf4j
 public class TokenUtils {
-
-  private static final Logger LOG = Logger.getLogger(TokenUtils.class);
-
   private static final String USER_TO_PROXY = "user.to.proxy";
   private static final String OTHER_NAMENODES = "other.namenodes";
   private static final String KEYTAB_USER = "keytab.user";
@@ -91,7 +90,7 @@ public class TokenUtils {
     final Configuration conf = new Configuration();
     final Credentials cred = new Credentials();
 
-    LOG.info("Getting tokens for " + userToProxy);
+    log.info("Getting tokens for " + userToProxy);
 
     getJhToken(conf, userToProxy, cred);
     getFsAndJtTokens(state, conf, userToProxy, cred);
@@ -102,28 +101,28 @@ public class TokenUtils {
     YarnRPC rpc = YarnRPC.create(conf);
     final String serviceAddr = conf.get(JHAdminConfig.MR_HISTORY_ADDRESS);
 
-    LOG.debug("Connecting to HistoryServer at: " + serviceAddr);
+    log.debug("Connecting to HistoryServer at: " + serviceAddr);
     HSClientProtocol hsProxy =
         (HSClientProtocol) rpc.getProxy(HSClientProtocol.class, NetUtils.createSocketAddr(serviceAddr), conf);
-    LOG.info("Pre-fetching JH token from job history server");
+    log.info("Pre-fetching JH token from job history server");
 
     Token<?> jhToken = null;
     try {
       jhToken = getDelegationTokenFromHS(hsProxy, conf);
     } catch (Exception e) {
-      LOG.error("Failed to fetch JH token", e);
+      log.error("Failed to fetch JH token", e);
       throw new IOException("Failed to fetch JH token for " + userToProxy);
     }
 
     if (jhToken == null) {
-      LOG.error("getDelegationTokenFromHS() returned null");
+      log.error("getDelegationTokenFromHS() returned null");
       throw new IOException("Unable to fetch JH token for " + userToProxy);
     }
 
-    LOG.info("Created JH token: " + jhToken.toString());
-    LOG.info("Token kind: " + jhToken.getKind());
-    LOG.info("Token id: " + jhToken.getIdentifier());
-    LOG.info("Token service: " + jhToken.getService());
+    log.info("Created JH token: " + jhToken.toString());
+    log.info("Token kind: " + jhToken.getKind());
+    log.info("Token id: " + jhToken.getIdentifier());
+    log.info("Token service: " + jhToken.getService());
 
     cred.addToken(jhToken.getService(), jhToken);
   }
@@ -152,45 +151,45 @@ public class TokenUtils {
 
   private static void getHdfsToken(Configuration conf, String userToProxy, Credentials cred) throws IOException {
     FileSystem fs = FileSystem.get(conf);
-    LOG.info("Getting DFS token from " + fs.getUri());
+    log.info("Getting DFS token from " + fs.getUri());
     Token<?> fsToken = fs.getDelegationToken(getMRTokenRenewerInternal(new JobConf()).toString());
     if (fsToken == null) {
-      LOG.error("Failed to fetch DFS token for ");
+      log.error("Failed to fetch DFS token for ");
       throw new IOException("Failed to fetch DFS token for " + userToProxy);
     }
-    LOG.info("Created DFS token: " + fsToken.toString());
-    LOG.info("Token kind: " + fsToken.getKind());
-    LOG.info("Token id: " + fsToken.getIdentifier());
-    LOG.info("Token service: " + fsToken.getService());
+    log.info("Created DFS token: " + fsToken.toString());
+    log.info("Token kind: " + fsToken.getKind());
+    log.info("Token id: " + fsToken.getIdentifier());
+    log.info("Token service: " + fsToken.getService());
 
     cred.addToken(fsToken.getService(), fsToken);
   }
 
   private static void getOtherNamenodesToken(List<String> otherNamenodes, Configuration conf, String userToProxy,
       Credentials cred) throws IOException {
-    LOG.info(OTHER_NAMENODES + ": " + otherNamenodes);
+    log.info(OTHER_NAMENODES + ": " + otherNamenodes);
     Path[] ps = new Path[otherNamenodes.size()];
     for (int i = 0; i < ps.length; i++) {
       ps[i] = new Path(otherNamenodes.get(i).trim());
     }
     TokenCache.obtainTokensForNamenodes(cred, ps, conf);
-    LOG.info("Successfully fetched tokens for: " + otherNamenodes);
+    log.info("Successfully fetched tokens for: " + otherNamenodes);
   }
 
   private static void getJtToken(String userToProxy, Credentials cred) throws IOException, InterruptedException {
     JobConf jobConf = new JobConf();
     JobClient jobClient = new JobClient(jobConf);
-    LOG.info("Pre-fetching JT token from JobTracker");
+    log.info("Pre-fetching JT token from JobTracker");
 
     Token<DelegationTokenIdentifier> mrdt = jobClient.getDelegationToken(getMRTokenRenewerInternal(jobConf));
     if (mrdt == null) {
-      LOG.error("Failed to fetch JT token");
+      log.error("Failed to fetch JT token");
       throw new IOException("Failed to fetch JT token for " + userToProxy);
     }
-    LOG.info("Created JT token: " + mrdt.toString());
-    LOG.info("Token kind: " + mrdt.getKind());
-    LOG.info("Token id: " + mrdt.getIdentifier());
-    LOG.info("Token service: " + mrdt.getService());
+    log.info("Created JT token: " + mrdt.toString());
+    log.info("Token kind: " + mrdt.getKind());
+    log.info("Token id: " + mrdt.getIdentifier());
+    log.info("Token service: " + mrdt.getService());
     cred.addToken(mrdt.getService(), mrdt);
   }
 
@@ -209,14 +208,14 @@ public class TokenUtils {
         try {
           dos.close();
         } catch (Throwable t) {
-          LOG.error("encountered exception while closing DataOutputStream of the tokenFile", t);
+          log.error("encountered exception while closing DataOutputStream of the tokenFile", t);
         }
       }
       if (fos != null) {
         fos.close();
       }
     }
-    LOG.info("Tokens loaded in " + tokenFile.getAbsolutePath());
+    log.info("Tokens loaded in " + tokenFile.getAbsolutePath());
   }
 
   private static Token<?> getDelegationTokenFromHS(HSClientProtocol hsProxy, Configuration conf)

@@ -83,7 +83,7 @@ class ScheduledExecutorServiceTaskScheduler<K, T extends ScheduledTask<K>> exten
   /**
    * An implementation of {@link Runnable} which will run the specified {@link ScheduledTask}.
    */
-  private class RunnableTask implements Runnable {
+  private class RunnableTask extends GobblinRunnable {
     private final T task;
 
     /**
@@ -107,7 +107,7 @@ class ScheduledExecutorServiceTaskScheduler<K, T extends ScheduledTask<K>> exten
      * @see     java.lang.Thread#run()
      */
     @Override
-    public void run() {
+    public void runImpl() {
       task.runOneIteration();
     }
   }

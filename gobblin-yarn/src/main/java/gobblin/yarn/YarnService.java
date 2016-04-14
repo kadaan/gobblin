@@ -397,10 +397,19 @@ public class YarnService extends AbstractIdleService {
 
   private String buildContainerCommand(Container container, String helixInstanceName) {
     String containerProcessName = GobblinWorkUnitRunner.class.getSimpleName();
-    return new StringBuilder()
+    StringBuilder commandBuilder = new StringBuilder();
+    commandBuilder
         .append(ApplicationConstants.Environment.JAVA_HOME.$()).append("/bin/java")
         .append(" -Xmx").append(container.getResource().getMemory()).append("M")
-        .append(" ").append(YarnHelixUtils.formatJvmArguments(this.containerJvmArgs))
+        .append(" ").append(YarnHelixUtils.formatJvmArguments(this.containerJvmArgs));
+    if (this.config.hasPath(GobblinYarnConfigurationKeys.LOG_CONFIG_FILE_KEY)) {
+      commandBuilder
+          .append(" -D").append(GobblinYarnConfigurationKeys.LOG_CONFIG_FILE_OPTION_NAME).append("=")
+          .append(this.config.getString(GobblinYarnConfigurationKeys.LOG_CONFIG_FILE_KEY));
+    }
+    commandBuilder
+        .append(" -D").append(GobblinYarnConfigurationKeys.LOG_FILE_PREFIX_OPTION_NAME).append("=")
+        .append(containerProcessName)
         .append(" ").append(GobblinWorkUnitRunner.class.getName())
         .append(" --").append(GobblinYarnConfigurationKeys.APPLICATION_NAME_OPTION_NAME)
         .append(" ").append(this.applicationName)
@@ -409,8 +418,8 @@ public class YarnService extends AbstractIdleService {
         .append(" 1>").append(ApplicationConstants.LOG_DIR_EXPANSION_VAR).append(File.separator).append(
           containerProcessName).append(".").append(ApplicationConstants.STDOUT)
         .append(" 2>").append(ApplicationConstants.LOG_DIR_EXPANSION_VAR).append(File.separator).append(
-          containerProcessName).append(".").append(ApplicationConstants.STDERR)
-        .toString();
+          containerProcessName).append(".").append(ApplicationConstants.STDERR);
+    return commandBuilder.toString();
   }
 
   /**

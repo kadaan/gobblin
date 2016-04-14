@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import gobblin.util.concurrent.GobblinCallable;
 import org.apache.hadoop.fs.Path;
 
 import com.google.common.base.Optional;
@@ -90,10 +91,10 @@ public class HiveRegistrationPublisher extends DataPublisher {
     Set<String> pathsToRegister = getUniquePathsToRegister(states);
     log.info("Number of paths to be registered in Hive: " + pathsToRegister.size());
     for (final String path : pathsToRegister) {
-      completionService.submit(new Callable<Collection<HiveSpec>>() {
+      completionService.submit(new GobblinCallable<Collection<HiveSpec>>() {
 
         @Override
-        public Collection<HiveSpec> call() throws Exception {
+        public Collection<HiveSpec> callImpl() throws Exception {
           return HiveRegistrationPublisher.this.policy.getHiveSpecs(new Path(path));
         }
       });

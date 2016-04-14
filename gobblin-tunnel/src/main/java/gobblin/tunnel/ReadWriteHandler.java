@@ -19,18 +19,20 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.Callable;
 
 import static java.nio.channels.SelectionKey.OP_READ;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gobblin.util.concurrent.GobblinCallable;
+
+
 /**
  * This class handles the relaying of data back and forth between the Client-to-Tunnel and Tunnel-to-Proxy
  * socket connections. This class is not thread safe.
  */
-class ReadWriteHandler implements Callable<HandlerState> {
+class ReadWriteHandler extends GobblinCallable<HandlerState> {
   static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
   private final SocketChannel proxy;
   private final SocketChannel client;
@@ -60,7 +62,7 @@ class ReadWriteHandler implements Callable<HandlerState> {
   }
 
   @Override
-  public HandlerState call()
+  public HandlerState callImpl()
       throws Exception {
     try {
       switch (state) {

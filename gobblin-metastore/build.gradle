@@ -32,6 +32,7 @@ dependencies {
     compile externalDependency.lombok
 
     runtime externalDependency.mysqlConnector
+    runtime externalDependency.logback
 
     testCompile externalDependency.testng
 }

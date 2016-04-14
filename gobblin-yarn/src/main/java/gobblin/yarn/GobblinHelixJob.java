@@ -9,13 +9,12 @@
  * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
  * CONDITIONS OF ANY KIND, either express or implied.
  */
-
 package gobblin.yarn;
 
 import java.util.List;
 import java.util.Properties;
 
-import org.apache.hadoop.fs.FileSystem;
+import gobblin.scheduler.BaseGobblinJob;
 import org.apache.hadoop.fs.Path;
 import org.apache.helix.HelixManager;
 
@@ -36,10 +35,9 @@ import gobblin.scheduler.JobScheduler;
  *
  * @author Yinan Li
  */
-public class GobblinHelixJob implements Job {
-
+public class GobblinHelixJob extends BaseGobblinJob {
   @Override
-  public void execute(JobExecutionContext context) throws JobExecutionException {
+  public void executeImpl(JobExecutionContext context) throws JobExecutionException {
     JobDataMap dataMap = context.getJobDetail().getJobDataMap();
 
     JobScheduler jobScheduler = (JobScheduler) dataMap.get(JobScheduler.JOB_SCHEDULER_KEY);

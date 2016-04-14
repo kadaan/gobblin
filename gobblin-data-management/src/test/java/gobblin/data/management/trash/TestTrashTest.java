@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import gobblin.util.concurrent.GobblinCallable;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.testng.Assert;
@@ -66,8 +67,8 @@ public class TestTrashTest {
 
     final Path path1 = new Path("/some/path");
 
-    Future<Boolean> future1 = executorService.submit(new Callable<Boolean>() {
-      @Override public Boolean call() throws Exception {
+    Future<Boolean> future1 = executorService.submit(new GobblinCallable<Boolean>() {
+      @Override public Boolean callImpl() throws Exception {
         return trash.moveToTrash(path1);
       }
     });

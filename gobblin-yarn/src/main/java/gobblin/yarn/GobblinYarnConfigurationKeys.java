@@ -29,6 +29,9 @@ public class GobblinYarnConfigurationKeys {
   public static final String MAX_GET_APP_REPORT_FAILURES_KEY = GOBBLIN_YARN_PREFIX + "max.get.app.report.failures";
   public static final String EMAIL_NOTIFICATION_ON_SHUTDOWN_KEY =
       GOBBLIN_YARN_PREFIX + "email.notification.on.shutdown";
+  public static final String LOG_CONFIG_FILE_KEY = GOBBLIN_YARN_PREFIX + "log.conf.file";
+  public static final String LOG_CONFIG_FILE_OPTION_NAME = "logback.configurationFile";
+  public static final String LOG_FILE_PREFIX_OPTION_NAME = "logFile.prefix";
 
   // Gobblin Yarn ApplicationMaster configuration properties.
   public static final String APP_MASTER_MEMORY_MBS_KEY = GOBBLIN_YARN_PREFIX + "app.master.memory.mbs";

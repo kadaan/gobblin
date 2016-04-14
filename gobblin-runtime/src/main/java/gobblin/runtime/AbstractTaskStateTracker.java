@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 import gobblin.runtime.fork.Fork;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.MDC;
 import org.slf4j.Logger;
 
 import com.google.common.base.Optional;
@@ -27,6 +28,7 @@ import com.google.common.util.concurrent.AbstractIdleService;
 
 import gobblin.configuration.ConfigurationKeys;
 import gobblin.metrics.GobblinMetrics;
+import gobblin.util.concurrent.GobblinRunnable;
 import gobblin.util.ExecutorsUtils;
 
 
@@ -89,7 +91,7 @@ public abstract class AbstractTaskStateTracker extends AbstractIdleService imple
    *
    * @deprecated see {@link gobblin.instrumented.writer.InstrumentedDataWriterBase}.
    */
-  protected class TaskMetricsUpdater implements Runnable {
+  protected class TaskMetricsUpdater extends GobblinRunnable {
 
     protected final Task task;
 
@@ -98,7 +100,8 @@ public abstract class AbstractTaskStateTracker extends AbstractIdleService imple
     }
 
     @Override
-    public void run() {
+    public void runImpl() {
+      MDC.put(ConfigurationKeys.TASK_KEY_KEY, task.getTaskKey());
       updateTaskMetrics();
       // Log record queue stats/metrics of each fork
       for (Optional<Fork> fork : this.task.getForks()) {

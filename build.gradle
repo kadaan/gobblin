@@ -107,6 +107,8 @@ if (!project.hasProperty('bytemanVersion')) {
 ext.avroVersion = '1.7.7'
 ext.dropwizardMetricsVersion = '3.1.0'
 ext.findBugsVersion = '3.0.0'
+ext.slf4jVersion= '1.7.19'
+ext.logbackVersion = '1.1.6'
 
 ext.externalDependency = [
   "antlrRuntime": "org.antlr:antlr-runtime:3.5.2",
@@ -159,10 +161,6 @@ ext.externalDependency = [
   "jacksonCore": "org.codehaus.jackson:jackson-core-asl:1.9.13",
   "jacksonMapper": "org.codehaus.jackson:jackson-mapper-asl:1.9.13",
   "jasypt": "org.jasypt:jasypt:1.9.2",
-  "slf4j": "org.slf4j:slf4j-api:1.7.16",
-  "log4j": "log4j:log4j:1.2.17",
-  "log4jextras": "log4j:apache-log4j-extras:1.2.17",
-  "slf4jLog4j": "org.slf4j:slf4j-log4j12:1.7.12",
   "jodaTime": "joda-time:joda-time:2.9.2",
   "metricsCore": "io.dropwizard.metrics:metrics-core:" + dropwizardMetricsVersion,
   "metricsJvm": "io.dropwizard.metrics:metrics-jvm:" + dropwizardMetricsVersion,
@@ -199,27 +197,36 @@ ext.externalDependency = [
   "hamcrest": "org.hamcrest:hamcrest-all:1.3",
   "joptSimple": "net.sf.jopt-simple:jopt-simple:4.9",
   "protobuf": "com.google.protobuf:protobuf-java:2.6.1",
-  "pegasus" : [
-    "data" : "com.linkedin.pegasus:data:" + pegasusVersion,
-    "generator" : "com.linkedin.pegasus:generator:" + pegasusVersion,
-    "restliClient" : "com.linkedin.pegasus:restli-client:" + pegasusVersion,
-    "restliServer" : "com.linkedin.pegasus:restli-server:" + pegasusVersion,
-    "restliTools" : "com.linkedin.pegasus:restli-tools:" + pegasusVersion,
-    "pegasusCommon" : "com.linkedin.pegasus:pegasus-common:" + pegasusVersion,
-    "restliCommon" : "com.linkedin.pegasus:restli-common:" + pegasusVersion,
-    "r2" : "com.linkedin.pegasus:r2:" + pegasusVersion,
-    "d2" : "com.linkedin.pegasus:d2:" + pegasusVersion,
-    "restliNettyStandalone" : "com.linkedin.pegasus:restli-netty-standalone:" + pegasusVersion
+  "pegasus": [
+    "data": "com.linkedin.pegasus:data:" + pegasusVersion,
+    "generator": "com.linkedin.pegasus:generator:" + pegasusVersion,
+    "restliClient": "com.linkedin.pegasus:restli-client:" + pegasusVersion,
+    "restliServer": "com.linkedin.pegasus:restli-server:" + pegasusVersion,
+    "restliTools": "com.linkedin.pegasus:restli-tools:" + pegasusVersion,
+    "pegasusCommon": "com.linkedin.pegasus:pegasus-common:" + pegasusVersion,
+    "restliCommon": "com.linkedin.pegasus:restli-common:" + pegasusVersion,
+    "r2": "com.linkedin.pegasus:r2:" + pegasusVersion,
+    "d2": "com.linkedin.pegasus:d2:" + pegasusVersion,
+    "restliNettyStandalone": "com.linkedin.pegasus:restli-netty-standalone:" + pegasusVersion
   ],
   "jetty": [
-          "org.eclipse.jetty:jetty-server:9.2.14.v20151106",
-          "org.eclipse.jetty:jetty-servlet:9.2.14.v20151106"
+    "org.eclipse.jetty:jetty-server:9.2.14.v20151106",
+    "org.eclipse.jetty:jetty-servlet:9.2.14.v20151106"
   ],
   "servlet-api": "javax.servlet:servlet-api:3.1.0",
-  "reflections" : "org.reflections:reflections:0.9.9",
+  "reflections": "org.reflections:reflections:0.9.9",
   "embeddedProcess": "de.flapdoodle.embed:de.flapdoodle.embed.process:1.50.1",
   "testMysqlServer": "com.wix:wix-embedded-mysql:1.0.3",
-  "flyway": "org.flywaydb:flyway-core:3.2.1"
+  "flyway": "org.flywaydb:flyway-core:3.2.1",
+  "slf4j": [
+    "org.slf4j:slf4j-api:" + slf4jVersion,
+    "org.slf4j:log4j-over-slf4j:" + slf4jVersion,
+    "org.slf4j:jcl-over-slf4j:" + slf4jVersion
+  ],
+  "logback": [
+    "ch.qos.logback:logback-classic:" + logbackVersion,
+    "ch.qos.logback:logback-core:" + logbackVersion
+  ]
 ];
 
 if (!isDefaultEnvironment)
@@ -358,12 +365,14 @@ ext.pomAttributes = {
 }
 
 def getAllDependentProjects(project) {
-  def projectDependencies = project.configurations.runtime.getAllDependencies().withType(ProjectDependency)
-  def dependentProjects = projectDependencies*.dependencyProject
-  if (dependentProjects.size() > 0) {
+  if(project.configurations.hasProperty("runtime")) {
+    def projectDependencies = project.configurations.runtime.getAllDependencies().withType(ProjectDependency)
+    def dependentProjects = projectDependencies*.dependencyProject
+    if (dependentProjects.size() > 0) {
       dependentProjects.each { dependentProjects += getAllDependentProjects(it) }
+    }
+    return dependentProjects.unique()
   }
-  return dependentProjects.unique()
 }
 
 subprojects {
@@ -399,6 +408,9 @@ subprojects {
     }
 
     configurations {
+      all*.exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+      all*.exclude group: 'commons-logging', module: 'commons-logging'
+      all*.exclude group: 'log4j', module: 'log4j'
       compile
       dependencies {
         if (project.hasProperty('useHadoop2')) {
@@ -528,8 +540,10 @@ gradle.projectsEvaluated {
   subprojects {
     plugins.withType(JavaPlugin) {
       getAllDependentProjects(project).each {
-        tasks.javadoc.options.linksOffline "http://linkedin.github.io/gobblin/javadoc/${javadocVersion}/${it.name}/",
+        if (it != null) {
+          tasks.javadoc.options.linksOffline "http://linkedin.github.io/gobblin/javadoc/${javadocVersion}/${it.name}/",
                                          "${rootProject.buildDir}/${it.name}/docs/javadoc/"
+        }
       }
     }
   }
@@ -542,6 +556,11 @@ if (JavaVersion.current().isJava8Compatible()) {
       options.addStringOption('Xdoclint:none', '-quiet')
     }
   }
+}
+
+subprojects {
+    task allDependency(type: DependencyReportTask) {}
+    task allDependencyInsight(type: DependencyInsightReportTask) {}
 }
 
 task dotProjectDependencies(description: 'List of gobblin project dependencies in dot format') << {

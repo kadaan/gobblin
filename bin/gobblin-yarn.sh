@@ -28,7 +28,7 @@ function start() {
     CLASSPATH=$CLASSPATH:"$EXTRA_JARS"
   fi
 
-  COMMAND="$JAVA_HOME/bin/java -cp $CLASSPATH $JVM_FLAGS gobblin.yarn.GobblinYarnAppLauncher"
+  COMMAND="$JAVA_HOME/bin/java -Dlogback.configurationFile=file:$YARN_CONF_DIR/logback-gobblin_yarn.xml -cp $CLASSPATH $JVM_FLAGS gobblin.yarn.GobblinYarnAppLauncher"
 
   echo "Running command:"
   echo "$COMMAND"

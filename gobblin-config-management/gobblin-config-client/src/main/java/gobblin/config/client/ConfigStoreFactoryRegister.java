@@ -18,12 +18,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 
 
+@Slf4j
 public class ConfigStoreFactoryRegister {
-  private static final Logger LOG = Logger.getLogger(ConfigStoreFactoryRegister.class);
-
   //key is the configStore scheme name, value is the ConfigStoreFactory
   @SuppressWarnings("rawtypes")
   private final Map<String, ConfigStoreFactory> configStoreFactoryMap = new HashMap<>() ;
@@ -33,7 +32,7 @@ public class ConfigStoreFactoryRegister {
     ServiceLoader<ConfigStoreFactory> loader = ServiceLoader.load(ConfigStoreFactory.class);
     for (ConfigStoreFactory f : loader) {
       configStoreFactoryMap.put(f.getScheme(), f);
-      LOG.info("Created the config store factory with scheme name " + f.getScheme());
+      log.info("Created the config store factory with scheme name " + f.getScheme());
     }
   }
 
@@ -45,6 +44,6 @@ public class ConfigStoreFactoryRegister {
   @SuppressWarnings("rawtypes")
   public void register(ConfigStoreFactory factory){
     this.configStoreFactoryMap.put(factory.getScheme(), factory);
-    LOG.info("Registered the config store factory with scheme name " + factory.getScheme());
+    log.info("Registered the config store factory with scheme name " + factory.getScheme());
   }
 }

@@ -18,7 +18,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.conf.Configuration;
@@ -48,6 +47,7 @@ import gobblin.metrics.kafka.KafkaEventReporter;
 import gobblin.metrics.reporter.OutputStreamEventReporter;
 import gobblin.metrics.reporter.OutputStreamReporter;
 import gobblin.metrics.reporter.ScheduledReporter;
+import gobblin.util.concurrent.GobblinCallable;
 
 
 /**
@@ -123,8 +123,8 @@ public class GobblinMetrics {
    * @return a {@link GobblinMetrics} instance
    */
   public static GobblinMetrics get(final String id, final MetricContext parentContext, final List<Tag<?>> tags) {
-    return GOBBLIN_METRICS_REGISTRY.getOrDefault(id, new Callable<GobblinMetrics>() {
-      @Override public GobblinMetrics call() throws Exception {
+    return GOBBLIN_METRICS_REGISTRY.getOrDefault(id, new GobblinCallable<GobblinMetrics>() {
+      @Override public GobblinMetrics callImpl() throws Exception {
         return new GobblinMetrics(id, parentContext, tags);
       }
     });

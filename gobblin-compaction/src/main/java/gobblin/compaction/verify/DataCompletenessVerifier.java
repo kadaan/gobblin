@@ -15,7 +15,6 @@ package gobblin.compaction.verify;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -31,6 +30,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import gobblin.compaction.dataset.Dataset;
 import gobblin.configuration.ConfigurationKeys;
 import gobblin.configuration.State;
+import gobblin.util.concurrent.GobblinCallable;
 import gobblin.util.ExecutorsUtils;
 import gobblin.util.executors.ScalingThreadPoolExecutor;
 
@@ -173,7 +173,7 @@ public class DataCompletenessVerifier implements Closeable {
    * Runner class for data completeness verification. Subclasses should implement {@link AbstractRunner#call()}
    * which should contain the logic of data completeness verification and returns a {@link Results} object.
    */
-  public static abstract class AbstractRunner implements Callable<Results> {
+  public static abstract class AbstractRunner extends GobblinCallable<Results> {
     protected final Iterable<Dataset> datasets;
     protected final State props;
 

@@ -177,7 +177,7 @@ start() {
   COMMAND+="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$GOBBLIN_LOG_DIR/ "
   COMMAND+="-Xloggc:$GOBBLIN_LOG_DIR/gobblin-gc.log "
   COMMAND+="-Dgobblin.logs.dir=$GOBBLIN_LOG_DIR "
-  COMMAND+="-Dlog4j.configuration=file://$FWDIR_CONF/log4j-standalone.xml "
+  COMMAND+="-Dlogback.configurationFile=file://$FWDIR_CONF/logback-gobblin_standalone.xml "
   COMMAND+="-cp $CLASSPATH "
   COMMAND+="-Dorg.quartz.properties=$FWDIR_CONF/quartz.properties "
   COMMAND+="$GOBBLIN_JVM_FLAGS "

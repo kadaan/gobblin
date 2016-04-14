@@ -24,7 +24,6 @@ dependencies {
   }
 
   compile externalDependency.azkaban
-  compile externalDependency.log4j
   compile externalDependency.guava
   compile externalDependency.commonsLang
   compile externalDependency.jodaTime
@@ -35,6 +34,8 @@ dependencies {
     compile externalDependency.hadoopYarnApi
   }
   compile externalDependency.findBugsAnnotations
+
+  runtime externalDependency.logback
 }
 
 configurations {

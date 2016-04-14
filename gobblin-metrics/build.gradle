@@ -50,6 +50,8 @@ dependencies {
   compile externalDependency.typesafeConfig
   compile externalDependency.findBugsAnnotations
 
+  runtime externalDependency.logback
+
   testCompile externalDependency.testng
   testCompile externalDependency.mockito
   testCompile(externalDependency.kafkaTest){

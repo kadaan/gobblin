@@ -23,12 +23,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.io.IOUtils;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.HttpForward;
@@ -38,6 +38,8 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import gobblin.util.concurrent.GobblinCallable;
 
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -137,9 +139,9 @@ public class TunnelTest {
       List<Future<String>> results = new ArrayList<Future<String>>();
 
       for (int i = 0; i < clients; i++) {
-        Future<String> result = executor.submit(new Callable<String>() {
+        Future<String> result = executor.submit(new GobblinCallable<String>() {
           @Override
-          public String call()
+          public String callImpl()
               throws Exception {
             startSignal.await();
 

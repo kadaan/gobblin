@@ -50,9 +50,6 @@ import org.apache.helix.messaging.handling.MessageHandlerFactory;
 import org.apache.helix.model.LiveInstance;
 import org.apache.helix.model.Message;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -73,6 +70,8 @@ import gobblin.runtime.app.ServiceBasedAppLauncher;
 import gobblin.util.ConfigUtils;
 import gobblin.yarn.event.ApplicationMasterShutdownRequest;
 import gobblin.yarn.event.DelegationTokenUpdatedEvent;
+
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -99,9 +98,8 @@ import gobblin.yarn.event.DelegationTokenUpdatedEvent;
  *
  * @author Yinan Li
  */
+@Slf4j
 public class GobblinApplicationMaster implements ApplicationLauncher {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(GobblinApplicationMaster.class);
 
   // An EventBus used for communications between services running in the ApplicationMaster
   private final EventBus eventBus = new EventBus(GobblinApplicationMaster.class.getSimpleName());
@@ -126,7 +124,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
     String applicationId = containerId.getApplicationAttemptId().getApplicationId().toString();
 
     String zkConnectionString = config.getString(GobblinYarnConfigurationKeys.ZK_CONNECTION_STRING_KEY);
-    LOGGER.info("Using ZooKeeper connection string: " + zkConnectionString);
+    log.info("Using ZooKeeper connection string: " + zkConnectionString);
 
     // This will create and register a Helix controller in ZooKeeper
     this.helixManager = buildHelixManager(config, zkConnectionString);
@@ -146,7 +144,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
     this.applicationLauncher.addService(buildJobConfigurationManager(config));
 
     if (UserGroupInformation.isSecurityEnabled()) {
-      LOGGER.info("Adding YarnContainerSecurityManager since security is enabled");
+      log.info("Adding YarnContainerSecurityManager since security is enabled");
       this.applicationLauncher.addService(buildYarnContainerSecurityManager(config, fs));
     }
   }
@@ -156,7 +154,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
    */
   @Override
   public void start() {
-    LOGGER.info("Starting the Gobblin Yarn ApplicationMaster");
+    log.info("Starting the Gobblin Yarn ApplicationMaster");
 
     this.eventBus.register(this);
     connectHelixManager();
@@ -174,14 +172,14 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
 
     this.stopInProgress = true;
 
-    LOGGER.info("Stopping the Gobblin Yarn ApplicationMaster");
+    log.info("Stopping the Gobblin Yarn ApplicationMaster");
 
     // Send a shutdown request to the containers as a second guard in case Yarn could not stop the containers
     sendShutdownRequest();
     try {
       this.applicationLauncher.stop();
     } catch (ApplicationException ae) {
-      LOGGER.error("Error while stopping ApplicationMaster", ae);
+      log.error("Error while stopping ApplicationMaster", ae);
     } finally {
       disconnectHelixManager();
     }
@@ -273,7 +271,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
           Message.MessageType.USER_DEFINE_MSG.toString(), new ControllerUserDefinedMessageHandlerFactory()
       );
     } catch (Exception e) {
-      LOGGER.error("HelixManager failed to connect", e);
+      log.error("HelixManager failed to connect", e);
       throw Throwables.propagate(e);
     }
   }
@@ -308,7 +306,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
 
     int messagesSent = this.helixManager.getMessagingService().send(criteria, shutdownRequest);
     if (messagesSent == 0) {
-      LOGGER.error(String.format("Failed to send the %s message to the participants", shutdownRequest.getMsgSubType()));
+      log.error(String.format("Failed to send the %s message to the participants", shutdownRequest.getMsgSubType()));
     }
   }
 
@@ -325,7 +323,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
     @Override
     public void onLiveInstanceChange(List<LiveInstance> liveInstances, NotificationContext changeContext) {
       for (LiveInstance liveInstance : liveInstances) {
-        LOGGER.info("Live Helix participant instance: " + liveInstance.getInstanceName());
+        log.info("Live Helix participant instance: " + liveInstance.getInstanceName());
       }
     }
   }
@@ -375,7 +373,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
           return result;
         }
 
-        LOGGER.info("Handling message " + HelixMessageSubTypes.APPLICATION_MASTER_SHUTDOWN.toString());
+        log.info("Handling message " + HelixMessageSubTypes.APPLICATION_MASTER_SHUTDOWN.toString());
 
         ScheduledExecutorService shutdownMessageHandlingCompletionWatcher =
             MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
@@ -405,7 +403,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
 
       @Override
       public void onError(Exception e, ErrorCode code, ErrorType type) {
-        LOGGER.error(
+        log.error(
             String.format("Failed to handle message with exception %s, error code %s, error type %s", e, code, type));
       }
     }
@@ -454,7 +452,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
         String messageSubType = this._message.getMsgSubType();
 
         if (messageSubType.equalsIgnoreCase(HelixMessageSubTypes.TOKEN_FILE_UPDATED.toString())) {
-          LOGGER.info("Handling message " + HelixMessageSubTypes.TOKEN_FILE_UPDATED.toString());
+          log.info("Handling message " + HelixMessageSubTypes.TOKEN_FILE_UPDATED.toString());
 
           eventBus.post(new DelegationTokenUpdatedEvent());
           HelixTaskResult helixTaskResult = new HelixTaskResult();
@@ -468,7 +466,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
 
       @Override
       public void onError(Exception e, ErrorCode code, ErrorType type) {
-        LOGGER.error(
+        log.error(
             String.format("Failed to handle message with exception %s, error code %s, error type %s", e, code, type));
       }
     }
@@ -494,10 +492,7 @@ public class GobblinApplicationMaster implements ApplicationLauncher {
         System.exit(1);
       }
 
-      Log4jConfigurationHelper.updateLog4jConfiguration(
-          GobblinApplicationMaster.class, Log4jConfigurationHelper.LOG4J_CONFIGURATION_FILE_NAME);
-
-      LOGGER.info(YarnHelixUtils.getJvmInputArguments());
+      log.info(YarnHelixUtils.getJvmInputArguments());
 
       ContainerId containerId =
           ConverterUtils.toContainerId(System.getenv().get(ApplicationConstants.Environment.CONTAINER_ID.key()));

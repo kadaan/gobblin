@@ -11,13 +11,13 @@
  */
 package gobblin.config.client;
 
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import gobblin.config.client.api.VersionStabilityPolicy;
+import gobblin.util.concurrent.GobblinCallable;
 
 /**
  * Caches {@link ConfigClient}s for every {@link VersionStabilityPolicy}.
@@ -29,9 +29,9 @@ public class ConfigClientCache {
 
   public static ConfigClient getClient(final VersionStabilityPolicy policy) {
     try {
-      return CONFIG_CLIENTS_CACHE.get(policy, new Callable<ConfigClient>() {
+      return CONFIG_CLIENTS_CACHE.get(policy, new GobblinCallable<ConfigClient>() {
         @Override
-        public ConfigClient call() throws Exception {
+        public ConfigClient callImpl() throws Exception {
           return ConfigClient.createConfigClient(policy);
         }
       });

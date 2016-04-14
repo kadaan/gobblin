@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
+import gobblin.util.concurrent.GobblinCallable;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
@@ -121,9 +122,9 @@ public class DatasetCleaner implements Instrumentable, Closeable {
     List<Dataset> dataSets = this.datasetFinder.findDatasets();
     finishCleanSignal = Optional.of(new CountDownLatch(dataSets.size()));
     for (final Dataset dataset : dataSets) {
-      ListenableFuture<Void> future = this.service.submit(new Callable<Void>() {
+      ListenableFuture<Void> future = this.service.submit(new GobblinCallable<Void>() {
         @Override
-        public Void call() throws Exception {
+        public Void callImpl() throws Exception {
           if (dataset instanceof CleanableDataset) {
             ((CleanableDataset) dataset).clean();
           }

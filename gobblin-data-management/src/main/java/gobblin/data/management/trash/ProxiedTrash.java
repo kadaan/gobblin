@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import gobblin.util.concurrent.GobblinCallable;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -142,9 +143,9 @@ public class ProxiedTrash extends Trash implements GobblinProxiedTrash {
       return this;
     } else {
       try {
-        return this.trashCache.get(user, new Callable<Trash>() {
+        return this.trashCache.get(user, new GobblinCallable<Trash>() {
           @Override
-          public Trash call()
+          public Trash callImpl()
               throws Exception {
             return createNewTrashForUser(fs, properties, user);
           }

@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -35,6 +34,7 @@ import gobblin.configuration.ConfigurationKeys;
 import gobblin.configuration.State;
 import gobblin.source.workunit.MultiWorkUnit;
 import gobblin.source.workunit.WorkUnit;
+import gobblin.util.concurrent.GobblinCallable;
 
 
 /**
@@ -53,11 +53,8 @@ public class JobLauncherUtils {
    * @param jobName job name
    * @return new job ID
    */
-  public static String newJobId(String jobName) {
-    // Job ID in the form of job_<job_id_suffix>
-    // <job_id_suffix> is in the form of <job_name>_<current_timestamp>
-    String jobIdSuffix = String.format("%s_%d", jobName, System.currentTimeMillis());
-    return "job_" + jobIdSuffix;
+  public static JobId newJobId(String jobName) {
+    return new JobId(jobName, Long.toString(System.currentTimeMillis()));
   }
 
   /**
@@ -233,10 +230,10 @@ public class JobLauncherUtils {
     String owner = state.getProp(ConfigurationKeys.FS_PROXY_AS_USER_NAME);
 
     try {
-      return fileSystemCacheByOwners.get(owner, new Callable<FileSystem>() {
+      return fileSystemCacheByOwners.get(owner, new GobblinCallable<FileSystem>() {
 
         @Override
-        public FileSystem call()
+        public FileSystem callImpl()
             throws Exception {
           return new ProxiedFileSystemWrapper().getProxiedFileSystem(state, ProxiedFileSystemWrapper.AuthType.KEYTAB,
               state.getProp(ConfigurationKeys.SUPER_USER_KEY_TAB_LOCATION), writerFsUri);

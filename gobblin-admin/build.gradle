@@ -27,6 +27,8 @@ dependencies {
     compile externalDependency.slf4j
     compile externalDependency.jodaTime
 
+    runtime externalDependency.logback
+
     testCompile externalDependency.testng
 }
 

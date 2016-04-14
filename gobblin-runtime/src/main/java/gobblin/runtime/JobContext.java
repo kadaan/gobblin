@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 
+import gobblin.util.JobId;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -72,7 +73,7 @@ public class JobContext {
   private static final String TASK_OUTPUT_DIR_NAME = "task-output";
 
   private final String jobName;
-  private final String jobId;
+  private final JobId jobId;
   private final JobState jobState;
   private final JobCommitPolicy jobCommitPolicy;
   private final boolean jobLockEnabled;
@@ -104,9 +105,10 @@ public class JobContext {
         "A job must have a job name specified by job.name");
 
     this.jobName = jobProps.getProperty(ConfigurationKeys.JOB_NAME_KEY);
-    this.jobId = jobProps.containsKey(ConfigurationKeys.JOB_ID_KEY) ? jobProps.getProperty(ConfigurationKeys.JOB_ID_KEY)
-        : JobLauncherUtils.newJobId(this.jobName);
-    jobProps.setProperty(ConfigurationKeys.JOB_ID_KEY, this.jobId);
+    this.jobId = jobProps.containsKey(ConfigurationKeys.JOB_ID_KEY) ?
+            JobId.parse(jobProps.getProperty(ConfigurationKeys.JOB_ID_KEY)) :
+            JobLauncherUtils.newJobId(this.jobName);
+    jobProps.setProperty(ConfigurationKeys.JOB_ID_KEY, this.jobId.toString());
 
     this.jobCommitPolicy = JobCommitPolicy.getCommitPolicy(jobProps);
 
@@ -137,7 +139,7 @@ public class JobContext {
     State jobPropsState = new State();
     jobPropsState.addAll(jobProps);
     this.jobState = new JobState(jobPropsState, this.datasetStateStore.getLatestDatasetStatesByUrns(this.jobName),
-        this.jobName, this.jobId);
+        this.jobName, this.jobId.toString());
 
     setTaskStagingAndOutputDirs();
 
@@ -153,7 +155,7 @@ public class JobContext {
 
     this.source = new SourceDecorator(
         Source.class.cast(Class.forName(jobProps.getProperty(ConfigurationKeys.SOURCE_CLASS_KEY)).newInstance()),
-        this.jobId, logger);
+        this.jobId.toString(), logger);
 
     this.logger = logger;
   }
@@ -189,7 +191,17 @@ public class JobContext {
    * @return job ID
    */
   public String getJobId() {
-    return this.jobId;
+    return this.jobId.toString();
+  }
+
+
+  /**
+   * Get the job key.
+   *
+   * @return job key
+   */
+  public String getJobKey() {
+    return this.jobId.getSequence();
   }
 
   /**
@@ -233,7 +245,7 @@ public class JobContext {
 
       // Add jobId to task data root dir
       String taskDataRootDirWithJobId =
-          new Path(this.jobState.getProp(ConfigurationKeys.TASK_DATA_ROOT_DIR_KEY), jobId).toString();
+          new Path(this.jobState.getProp(ConfigurationKeys.TASK_DATA_ROOT_DIR_KEY), jobId.toString()).toString();
       this.jobState.setProp(ConfigurationKeys.TASK_DATA_ROOT_DIR_KEY, taskDataRootDirWithJobId);
 
       setTaskStagingDir();

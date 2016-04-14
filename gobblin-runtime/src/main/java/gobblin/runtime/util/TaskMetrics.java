@@ -13,7 +13,6 @@
 package gobblin.runtime.util;
 
 import java.util.List;
-import java.util.concurrent.Callable;
 
 import com.google.common.collect.Lists;
 
@@ -22,6 +21,7 @@ import gobblin.metrics.GobblinMetrics;
 import gobblin.metrics.MetricContext;
 import gobblin.metrics.Tag;
 import gobblin.runtime.TaskState;
+import gobblin.util.concurrent.GobblinCallable;
 
 
 /**
@@ -45,8 +45,8 @@ public class TaskMetrics extends GobblinMetrics {
    * @return a {@link TaskMetrics} instance
    */
   public static TaskMetrics get(final TaskState taskState) {
-    return (TaskMetrics) GOBBLIN_METRICS_REGISTRY.getOrDefault(name(taskState), new Callable<GobblinMetrics>() {
-      @Override public GobblinMetrics call() throws Exception {
+    return (TaskMetrics) GOBBLIN_METRICS_REGISTRY.getOrDefault(name(taskState), new GobblinCallable<GobblinMetrics>() {
+      @Override public GobblinMetrics callImpl() throws Exception {
         return new TaskMetrics(taskState);
       }
     });

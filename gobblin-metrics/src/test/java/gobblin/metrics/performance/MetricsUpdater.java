@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 
 import gobblin.metrics.MetricContext;
 import gobblin.metrics.RootMetricContext;
+import gobblin.util.concurrent.GobblinRunnable;
 
 
 /**
@@ -44,7 +45,7 @@ import gobblin.metrics.RootMetricContext;
  *   * timers: number of timers to generate. Named timer0, timer1, ...
  * </p>
  */
-public class MetricsUpdater implements Runnable {
+public class MetricsUpdater extends GobblinRunnable {
 
   private final int depth;
   @Getter
@@ -90,7 +91,7 @@ public class MetricsUpdater implements Runnable {
 
   }
 
-  @Override public void run() {
+  @Override public void runImpl() {
     updateCounters();
     updateMeters();
     updateHistograms();

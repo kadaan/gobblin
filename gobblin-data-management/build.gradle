@@ -24,7 +24,6 @@ dependencies {
   compile externalDependency.commonsLang3
   compile externalDependency.guava
   compile externalDependency.slf4j
-  compile externalDependency.log4j
   compile externalDependency.jodaTime
   compile externalDependency.azkaban
   compile externalDependency.metricsCore
@@ -35,6 +34,8 @@ dependencies {
   compile externalDependency.commonsCodec
   compile externalDependency.typesafeConfig
   compile externalDependency.findBugsAnnotations
+
+  runtime externalDependency.logback
 
   testCompile externalDependency.calciteCore
   testCompile externalDependency.calciteAvatica

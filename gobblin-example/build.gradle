@@ -28,6 +28,8 @@ dependencies {
       compile externalDependency.avroMapredH1
     }
 
+    runtime externalDependency.logback
+
     testCompile externalDependency.testng
 }
 

@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
@@ -49,6 +48,7 @@ import gobblin.metrics.context.ContextWeakReference;
 import gobblin.metrics.context.NameConflictException;
 import gobblin.metrics.context.ReportableContext;
 import gobblin.metrics.metric.InnerMetric;
+import gobblin.util.concurrent.GobblinCallable;
 
 
 /**
@@ -126,8 +126,8 @@ public class InnerMetricContext extends MetricRegistry implements ReportableCont
    */
   public synchronized void addChildContext(String childContextName, final MetricContext childContext)
       throws NameConflictException, ExecutionException {
-    if (this.children.get(childContextName, new Callable<MetricContext>() {
-      @Override public MetricContext call() throws Exception {
+    if (this.children.get(childContextName, new GobblinCallable<MetricContext>() {
+      @Override public MetricContext callImpl() throws Exception {
         return childContext;
       }
     }) != childContext) {

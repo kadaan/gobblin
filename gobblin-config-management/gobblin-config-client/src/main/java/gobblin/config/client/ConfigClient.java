@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.log4j.Logger;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -44,6 +42,9 @@ import gobblin.config.store.api.ConfigStoreFactory;
 import gobblin.config.store.api.ConfigStoreWithStableVersioning;
 import gobblin.config.store.api.VersionDoesNotExistException;
 
+import lombok.extern.slf4j.Slf4j;
+
+
 /**
  * This class is used by Client to access the Configuration Management core library.
  * 
@@ -51,9 +52,8 @@ import gobblin.config.store.api.VersionDoesNotExistException;
  * @author mitu
  *
  */
+@Slf4j
 public class ConfigClient {
-  private static final Logger LOG = Logger.getLogger(ConfigClient.class);
-  
   private final VersionStabilityPolicy policy;
 
   /** Normally key is the ConfigStore.getStoreURI(), value is the ConfigStoreAccessor
@@ -260,7 +260,7 @@ public class ConfigClient {
   private ConfigStoreAccessor createNewConfigStoreAccessor(URI configKeyURI) throws ConfigStoreFactoryDoesNotExistsException,
   ConfigStoreCreationException, VersionDoesNotExistException{
     
-    LOG.info("Create new config store accessor for URI " + configKeyURI);
+    log.info("Create new config store accessor for URI " + configKeyURI);
     ConfigStoreAccessor result;
     ConfigStoreFactory<ConfigStore> csFactory = this.getConfigStoreFactory(configKeyURI);
     ConfigStore cs = csFactory.createConfigStore(configKeyURI);

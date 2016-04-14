@@ -16,13 +16,15 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.Callable;
 
+import gobblin.util.concurrent.GobblinCallable;
+
 
 /**
  * {@link Callable} that keeps incrementing a count up to a max_count. At each iteration, it calls a custom
  * callback.
  */
 @Slf4j
-public class Incrementer implements Callable<Long> {
+public class Incrementer extends GobblinCallable<Long> {
 
   private final long max_count;
   private final Runnable runnable;
@@ -38,7 +40,7 @@ public class Incrementer implements Callable<Long> {
     this.logInterval = max_count / 10;
   }
 
-  @Override public Long call() throws Exception {
+  @Override public Long callImpl() throws Exception {
 
     long count = 0;
 

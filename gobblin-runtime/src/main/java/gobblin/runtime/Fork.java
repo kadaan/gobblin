@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -41,6 +42,7 @@ import gobblin.qualitychecker.row.RowLevelPolicyChecker;
 import gobblin.qualitychecker.task.TaskLevelPolicyCheckResults;
 import gobblin.runtime.util.TaskMetrics;
 import gobblin.state.ConstructState;
+import gobblin.util.concurrent.GobblinRunnable;
 import gobblin.util.FinalState;
 import gobblin.util.ForkOperatorUtils;
 import gobblin.writer.DataWriter;
@@ -67,7 +69,7 @@ import gobblin.writer.PartitionedDataWriter;
  * @author Yinan Li
  */
 @SuppressWarnings("unchecked")
-public class Fork implements Closeable, Runnable, FinalState {
+public class Fork extends GobblinRunnable implements Closeable, Runnable, FinalState {
 
   // Possible state of a fork
   enum ForkState {
@@ -81,6 +83,7 @@ public class Fork implements Closeable, Runnable, FinalState {
   // A TaskState instance specific to this Fork
   private final TaskState forkTaskState;
   private final String taskId;
+  private final String taskKey;
 
   private final int branches;
   private final int index;
@@ -115,9 +118,10 @@ public class Fork implements Closeable, Runnable, FinalState {
 
     this.taskContext = taskContext;
     this.taskState = this.taskContext.getTaskState();
+    this.taskId = this.taskState.getTaskId();
+    this.taskKey = this.taskState.getTaskKey();
     // Make a copy if there are more than one branches
     this.forkTaskState = branches > 1 ? new TaskState(this.taskState) : this.taskState;
-    this.taskId = this.taskState.getTaskId();
 
     this.branches = branches;
     this.index = index;
@@ -163,7 +167,8 @@ public class Fork implements Closeable, Runnable, FinalState {
   }
 
   @Override
-  public void run() {
+  protected void runImpl() {
+    MDC.put(ConfigurationKeys.TASK_KEY_KEY, this.taskKey);
     compareAndSetForkState(ForkState.PENDING, ForkState.RUNNING);
     try {
       processRecords();

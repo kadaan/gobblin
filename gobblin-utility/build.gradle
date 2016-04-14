@@ -45,6 +45,8 @@ dependencies {
     runtime externalDependency.hadoop
   }
 
+  runtime externalDependency.logback
+
   testCompile externalDependency.hamcrest
   testCompile externalDependency.testng
   testCompile externalDependency.mockito

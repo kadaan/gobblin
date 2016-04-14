@@ -15,6 +15,7 @@ package gobblin.data.management.copy;
 import gobblin.data.management.partition.File;
 import gobblin.data.management.copy.PreserveAttributes.Option;
 import gobblin.util.PathUtils;
+import gobblin.util.concurrent.GobblinCallable;
 import gobblin.util.guid.Guid;
 
 import java.io.IOException;
@@ -229,8 +230,8 @@ public class CopyableFile extends CopyEntity implements File {
           final Path thisPath = currentPath;
           OwnerAndPermission ownerAndPermission = this.configuration.getCopyContext().getOwnerAndPermissionCache()
               .get(originFs.makeQualified(currentPath),
-                  new Callable<OwnerAndPermission>() {
-                    @Override public OwnerAndPermission call() throws Exception {
+                  new GobblinCallable<OwnerAndPermission>() {
+                    @Override public OwnerAndPermission callImpl() throws Exception {
                       FileStatus fs = originFs.getFileStatus(thisPath);
                       return new OwnerAndPermission(fs.getOwner(), fs.getGroup(), fs.getPermission());
                     }

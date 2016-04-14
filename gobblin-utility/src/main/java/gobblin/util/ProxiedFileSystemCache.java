@@ -15,7 +15,6 @@ package gobblin.util;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import com.google.common.base.Optional;
@@ -34,6 +33,7 @@ import org.apache.hadoop.security.token.Token;
 
 import gobblin.configuration.ConfigurationKeys;
 import gobblin.configuration.State;
+import gobblin.util.concurrent.GobblinCallable;
 
 
 /**
@@ -215,14 +215,14 @@ public class ProxiedFileSystemCache {
   }
 
   @AllArgsConstructor
-  private static class CreateProxiedFileSystemFromProperties implements Callable<FileSystem> {
+  private static class CreateProxiedFileSystemFromProperties extends GobblinCallable<FileSystem> {
     @NonNull private final String userNameToProxyAs;
     @NonNull private final Properties properties;
     @NonNull private final URI uri;
     @NonNull private final Configuration configuration;
     private final FileSystem referenceFS;
 
-    @Override public FileSystem call() throws Exception {
+    @Override public FileSystem callImpl() throws Exception {
       FileSystem fs =
           ProxiedFileSystemUtils.createProxiedFileSystem(this.userNameToProxyAs, this.properties, this.uri, this.configuration);
       if(this.referenceFS != null) {
@@ -234,7 +234,7 @@ public class ProxiedFileSystemCache {
   }
 
   @AllArgsConstructor
-  private static class CreateProxiedFileSystemFromKeytab implements Callable<FileSystem> {
+  private static class CreateProxiedFileSystemFromKeytab extends GobblinCallable<FileSystem> {
     @NonNull private final String userNameToProxyAs;
     @NonNull private final String superUser;
     @NonNull private final Path keytabLocation;
@@ -242,7 +242,7 @@ public class ProxiedFileSystemCache {
     @NonNull private final Configuration configuration;
     private final FileSystem referenceFS;
 
-    @Override public FileSystem call() throws Exception {
+    @Override public FileSystem callImpl() throws Exception {
       FileSystem fs =
           ProxiedFileSystemUtils.createProxiedFileSystemUsingKeytab(userNameToProxyAs, superUser,
               keytabLocation, uri, configuration);
@@ -255,14 +255,14 @@ public class ProxiedFileSystemCache {
   }
 
   @AllArgsConstructor
-  private static class CreateProxiedFileSystemFromToken implements Callable<FileSystem> {
+  private static class CreateProxiedFileSystemFromToken extends GobblinCallable<FileSystem> {
     @NonNull private final String userNameToProxyAs;
     @NonNull private final Token<?> userNameToken;
     @NonNull private final URI uri;
     @NonNull private final Configuration configuration;
     private final FileSystem referenceFS;
 
-    @Override public FileSystem call() throws Exception {
+    @Override public FileSystem callImpl() throws Exception {
       FileSystem fs =
           ProxiedFileSystemUtils.createProxiedFileSystemUsingToken(this.userNameToProxyAs, userNameToken,
               this.uri, this.configuration);

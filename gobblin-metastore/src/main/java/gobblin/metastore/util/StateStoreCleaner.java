@@ -43,6 +43,7 @@ import com.google.common.io.Files;
 import com.google.common.util.concurrent.AbstractIdleService;
 
 import gobblin.configuration.ConfigurationKeys;
+import gobblin.util.concurrent.GobblinRunnable;
 import gobblin.util.ExecutorsUtils;
 
 
@@ -169,7 +170,7 @@ public class StateStoreCleaner extends AbstractIdleService implements Closeable 
     }
   }
 
-  private static class CleanerRunner implements Runnable {
+  private static class CleanerRunner extends GobblinRunnable {
 
     private final FileSystem fs;
     private final Path stateStoreDir;
@@ -184,7 +185,7 @@ public class StateStoreCleaner extends AbstractIdleService implements Closeable 
     }
 
     @Override
-    public void run() {
+    public void runImpl() {
       try {
         FileStatus[] stateStoreFiles = this.fs.listStatus(this.stateStoreDir, new StateStoreFileFilter());
         if (stateStoreFiles == null || stateStoreFiles.length == 0) {

@@ -45,6 +45,7 @@ dependencies {
   compile externalDependency.findBugsAnnotations
 
   runtime externalDependency.protobuf
+  runtime externalDependency.logback
 
   if (project.hasProperty('useHadoop2')) {
     compile externalDependency.avroMapredH2

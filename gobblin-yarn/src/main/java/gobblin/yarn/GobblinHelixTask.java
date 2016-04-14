@@ -15,6 +15,7 @@ package gobblin.yarn;
 import java.io.IOException;
 import java.util.List;
 
+import gobblin.util.JobId;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -25,6 +26,7 @@ import org.apache.helix.task.TaskResult;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -74,7 +76,9 @@ public class GobblinHelixTask implements Task {
   private final TaskConfig taskConfig;
   // An empty JobState instance that will be filled with values read from the serialized JobState
   private final JobState jobState = new JobState();
+  private final String jobName;
   private final String jobId;
+  private final String jobKey;
   private final String participantId;
 
   private final FileSystem fs;
@@ -87,7 +91,10 @@ public class GobblinHelixTask implements Task {
     this.taskStateTracker = taskStateTracker;
 
     this.taskConfig = taskCallbackContext.getTaskConfig();
-    this.jobId = this.taskConfig.getConfigMap().get(ConfigurationKeys.JOB_ID_KEY);
+    this.jobName = this.taskConfig.getConfigMap().get(ConfigurationKeys.JOB_NAME_KEY);
+    JobId jobId = JobId.parse(this.taskConfig.getConfigMap().get(ConfigurationKeys.JOB_ID_KEY));
+    this.jobId = jobId.toString();
+    this.jobKey = jobId.getSequence();
     this.participantId = taskCallbackContext.getManager().getInstanceName();
 
     this.fs = fs;
@@ -110,6 +117,8 @@ public class GobblinHelixTask implements Task {
   @Override
   public TaskResult run() {
     try {
+      MDC.put(ConfigurationKeys.JOB_NAME_KEY, this.jobName);
+      MDC.put(ConfigurationKeys.JOB_KEY_KEY, this.jobKey);
       Path workUnitFilePath =
           new Path(this.taskConfig.getConfigMap().get(GobblinYarnConfigurationKeys.WORK_UNIT_FILE_PATH));
 
@@ -144,6 +153,8 @@ public class GobblinHelixTask implements Task {
     } catch (Throwable t) {
       LOGGER.error("GobblinHelixTask failed due to " + t.getMessage(), t);
       return new TaskResult(TaskResult.Status.ERROR, Throwables.getStackTraceAsString(t));
+    } finally {
+      MDC.remove(ConfigurationKeys.JOB_ID_KEY);
     }
   }
 

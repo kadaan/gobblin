@@ -49,9 +49,6 @@ import org.apache.helix.model.Message;
 import org.apache.helix.task.TaskFactory;
 import org.apache.helix.task.TaskStateModelFactory;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -74,6 +71,8 @@ import gobblin.runtime.services.JMXReportingService;
 import gobblin.util.ConfigUtils;
 import gobblin.util.HadoopUtils;
 import gobblin.yarn.event.DelegationTokenUpdatedEvent;
+
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -100,9 +99,8 @@ import gobblin.yarn.event.DelegationTokenUpdatedEvent;
  *
  * @author Yinan Li
  */
+@Slf4j
 public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(GobblinWorkUnitRunner.class);
 
   static final String GOBBLIN_TASK_FACTORY_NAME = "GobblinTaskFactory";
 
@@ -138,7 +136,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
     FileSystem fs = buildFileSystem(this.config, conf);
 
     String zkConnectionString = config.getString(GobblinYarnConfigurationKeys.ZK_CONNECTION_STRING_KEY);
-    LOGGER.info("Using ZooKeeper connection string: " + zkConnectionString);
+    log.info("Using ZooKeeper connection string: " + zkConnectionString);
 
     this.helixManager = HelixManagerFactory
         .getZKHelixManager(config.getString(GobblinYarnConfigurationKeys.HELIX_CLUSTER_NAME_KEY), helixInstanceName,
@@ -159,7 +157,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
     services.add(taskExecutor);
     services.add(taskStateTracker);
     if (config.hasPath(GobblinYarnConfigurationKeys.KEYTAB_FILE_PATH)) {
-      LOGGER.info("Adding YarnContainerSecurityManager since login is keytab based");
+      log.info("Adding YarnContainerSecurityManager since login is keytab based");
       services.add(new YarnContainerSecurityManager(config, fs, this.eventBus));
     }
     services.add(new JMXReportingService());
@@ -180,7 +178,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
    * Start this {@link GobblinWorkUnitRunner} instance.
    */
   public void start() {
-    LOGGER.info(String.format("Starting %s in container %s", this.helixInstanceName, this.containerId));
+    log.info(String.format("Starting %s in container %s", this.helixInstanceName, this.containerId));
 
     // Add a shutdown hook so the task scheduler gets properly shutdown
     addShutdownHook();
@@ -204,7 +202,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
 
     this.stopInProgress = true;
 
-    LOGGER.info("Stopping the Gobblin Yarn WorkUnit runner");
+    log.info("Stopping the Gobblin Yarn WorkUnit runner");
 
     // Stop metric reporting
     if (this.containerMetrics.isPresent()) {
@@ -215,7 +213,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
       // Give the services 5 minutes to stop to ensure that we are responsive to shutdown requests
       this.serviceManager.stopAsync().awaitStopped(5, TimeUnit.MINUTES);
     } catch (TimeoutException te) {
-      LOGGER.error("Timeout in stopping the service manager", te);
+      log.error("Timeout in stopping the service manager", te);
     } finally {
       this.taskStateModelFactory.shutdown();
 
@@ -240,7 +238,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
           .registerMessageHandlerFactory(Message.MessageType.USER_DEFINE_MSG.toString(),
               new ParticipantUserDefinedMessageHandlerFactory());
     } catch (Exception e) {
-      LOGGER.error("HelixManager failed to connect", e);
+      log.error("HelixManager failed to connect", e);
       throw Throwables.propagate(e);
     }
   }
@@ -257,7 +255,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
 
       @Override
       public void run() {
-        LOGGER.info("Running the shutdown hook");
+        log.info("Running the shutdown hook");
         GobblinWorkUnitRunner.this.stop();
       }
     });
@@ -324,7 +322,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
           return result;
         }
 
-        LOGGER.info("Handling message " + HelixMessageSubTypes.WORK_UNIT_RUNNER_SHUTDOWN.toString());
+        log.info("Handling message " + HelixMessageSubTypes.WORK_UNIT_RUNNER_SHUTDOWN.toString());
 
         ScheduledExecutorService shutdownMessageHandlingCompletionWatcher =
             MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
@@ -354,7 +352,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
 
       @Override
       public void onError(Exception e, ErrorCode code, ErrorType type) {
-        LOGGER.error(
+        log.error(
             String.format("Failed to handle message with exception %s, error code %s, error type %s", e, code, type));
       }
     }
@@ -403,7 +401,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
         String messageSubType = this._message.getMsgSubType();
 
         if (messageSubType.equalsIgnoreCase(HelixMessageSubTypes.TOKEN_FILE_UPDATED.toString())) {
-          LOGGER.info("Handling message " + HelixMessageSubTypes.TOKEN_FILE_UPDATED.toString());
+          log.info("Handling message " + HelixMessageSubTypes.TOKEN_FILE_UPDATED.toString());
 
           eventBus.post(new DelegationTokenUpdatedEvent());
           HelixTaskResult helixTaskResult = new HelixTaskResult();
@@ -417,7 +415,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
 
       @Override
       public void onError(Exception e, ErrorCode code, ErrorType type) {
-        LOGGER.error(
+        log.error(
             String.format("Failed to handle message with exception %s, error code %s, error type %s", e, code, type));
       }
     }
@@ -445,10 +443,7 @@ public class GobblinWorkUnitRunner extends GobblinYarnLogSource {
         System.exit(1);
       }
 
-      Log4jConfigurationHelper.updateLog4jConfiguration(GobblinWorkUnitRunner.class,
-          Log4jConfigurationHelper.LOG4J_CONFIGURATION_FILE_NAME);
-
-      LOGGER.info(YarnHelixUtils.getJvmInputArguments());
+      log.info(YarnHelixUtils.getJvmInputArguments());
 
       ContainerId containerId =
           ConverterUtils.toContainerId(System.getenv().get(ApplicationConstants.Environment.CONTAINER_ID.key()));

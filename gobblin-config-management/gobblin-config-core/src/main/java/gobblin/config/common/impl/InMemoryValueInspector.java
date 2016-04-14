@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import com.google.common.cache.Cache;
@@ -13,6 +12,7 @@ import com.typesafe.config.Config;
 
 import gobblin.config.store.api.ConfigKeyPath;
 import gobblin.config.store.api.ConfigStore;
+import gobblin.util.concurrent.GobblinCallable;
 
 /**
  * InMemoryValueInspector provide the caching layer for getting the {@link com.typesafe.config.Config} from {@link ConfigStore}
@@ -55,9 +55,9 @@ public class InMemoryValueInspector implements ConfigStoreValueInspector{
   @Override
   public Config getOwnConfig(final ConfigKeyPath configKey) {
     try {
-      return this.ownConfigCache.get(configKey, new Callable<Config>() {
+      return this.ownConfigCache.get(configKey, new GobblinCallable<Config>() {
         @Override
-        public Config call()  {
+        public Config callImpl() {
           return valueFallback.getOwnConfig(configKey);
         }
       });
@@ -78,9 +78,9 @@ public class InMemoryValueInspector implements ConfigStoreValueInspector{
   @Override
   public Config getResolvedConfig(final ConfigKeyPath configKey) {
     try {
-      return this.recursiveConfigCache.get(configKey, new Callable<Config>() {
+      return this.recursiveConfigCache.get(configKey, new GobblinCallable<Config>() {
         @Override
-        public Config call()  {
+        public Config callImpl() {
           return valueFallback.getResolvedConfig(configKey);
         }
       });

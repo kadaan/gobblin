@@ -36,6 +36,7 @@ import gobblin.metrics.GobblinMetrics;
 import gobblin.metrics.MetricContext;
 import gobblin.metrics.MetricNames;
 import gobblin.metrics.Tag;
+import gobblin.util.concurrent.GobblinRunnable;
 import gobblin.util.ExecutorsUtils;
 import gobblin.util.FinalState;
 import gobblin.writer.DataWriter;
@@ -283,10 +284,10 @@ abstract class InstrumentedDataWriterBase<D> implements DataWriter<D>, Instrumen
   /**
    * An implementation of {@link Runnable} that updates record-level and byte-level metrics.
    */
-  private class WriterMetricsUpdater implements Runnable {
+  private class WriterMetricsUpdater extends GobblinRunnable {
 
     @Override
-    public void run() {
+    public void runImpl() {
       updateRecordsWrittenMeter();
       updateBytesWrittenMeter();
     }

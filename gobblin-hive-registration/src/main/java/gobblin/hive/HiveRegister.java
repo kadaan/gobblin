@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import gobblin.util.concurrent.GobblinCallable;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
 
 import com.google.common.base.Optional;
@@ -86,10 +87,10 @@ public abstract class HiveRegister implements Closeable {
    * @return a {@link ListenableFuture} for the process of registering the given {@link HiveSpec}.
    */
   public ListenableFuture<Void> register(final HiveSpec spec) throws IOException {
-    ListenableFuture<Void> future = this.executor.submit(new Callable<Void>() {
+    ListenableFuture<Void> future = this.executor.submit(new GobblinCallable<Void>() {
 
       @Override
-      public Void call() throws Exception {
+      public Void callImpl() throws Exception {
 
         if (spec instanceof HiveSpecWithPredicates && !evaluatePredicates((HiveSpecWithPredicates) spec)) {
           log.info("Skipping " + spec + " since predicates return false");

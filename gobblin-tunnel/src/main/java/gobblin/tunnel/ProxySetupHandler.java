@@ -21,18 +21,17 @@ import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import gobblin.configuration.ConfigurationKeys;
-
+import gobblin.util.concurrent.GobblinCallable;
 
 /**
  * Handler for setting up the connection from the Tunnel to the intermediate proxy via HTTP CONNECT.
  */
-class ProxySetupHandler implements Callable<HandlerState> {
+class ProxySetupHandler extends GobblinCallable<HandlerState> {
   private static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
 
   public static final String HTTP_1_1_OK = "HTTP/1.1 200";
@@ -80,7 +79,7 @@ class ProxySetupHandler implements Callable<HandlerState> {
   }
 
   @Override
-  public HandlerState call()
+  public HandlerState callImpl()
       throws Exception {
     try {
       switch (state) {

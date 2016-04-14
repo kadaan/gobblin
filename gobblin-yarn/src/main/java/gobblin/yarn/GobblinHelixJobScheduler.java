@@ -12,13 +12,10 @@
 
 package gobblin.yarn;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.helix.HelixManager;
 

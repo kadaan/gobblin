@@ -22,6 +22,7 @@ import gobblin.config.store.deploy.DeployableConfigSource;
 import gobblin.config.store.deploy.FsDeploymentConfig;
 import gobblin.util.FileListUtils;
 import gobblin.util.PathUtils;
+import gobblin.util.concurrent.GobblinCallable;
 import gobblin.util.io.SeekableFSInputStream;
 import gobblin.util.io.StreamUtils;
 
@@ -341,12 +342,12 @@ public class SimpleHDFSConfigStore implements ConfigStore, Deployable<FsDeployme
    * conjunction with the {@link #versions} cache.
    */
   @AllArgsConstructor
-  private class VersionRootLoader implements Callable<Path> {
+  private class VersionRootLoader extends GobblinCallable<Path> {
 
     private String version;
 
     @Override
-    public Path call() throws IOException {
+    public Path callImpl() throws IOException {
       Path versionRootPath = PathUtils.combinePaths(physicalStoreRoot.toString(), CONFIG_STORE_NAME, version);
       if (fs.isDirectory(versionRootPath)) {
         return versionRootPath;

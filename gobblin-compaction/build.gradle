@@ -24,6 +24,8 @@ dependencies {
   compile externalDependency.commonsMath
   compile externalDependency.hiveExec
 
+  runtime externalDependency.logback
+
   if (project.hasProperty('useHadoop2')) {
     runtime externalDependency.hadoopCommon
     runtime externalDependency.hadoopClientCore

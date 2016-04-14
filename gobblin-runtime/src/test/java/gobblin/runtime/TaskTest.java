@@ -52,8 +52,10 @@ public class TaskTest {
   @Test
   public void testRetryTask() throws Exception {
     // Create a TaskState
-    TaskState taskState = new TaskState(new WorkUnitState(WorkUnit.create(
-        new Extract(Extract.TableType.SNAPSHOT_ONLY, this.getClass().getName(), this.getClass().getSimpleName()))));
+    WorkUnit workUnit = WorkUnit.create(new Extract(Extract.TableType.SNAPSHOT_ONLY, this.getClass().getName(),
+             this.getClass().getSimpleName()));
+    workUnit.setProp(ConfigurationKeys.TASK_KEY_KEY, "taskKey");
+    TaskState taskState = new TaskState(new WorkUnitState(workUnit));
     taskState.setProp(ConfigurationKeys.METRICS_ENABLED_KEY, Boolean.toString(false));
     taskState.setTaskId("testRetryTaskId");
 

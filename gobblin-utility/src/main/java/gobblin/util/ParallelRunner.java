@@ -18,7 +18,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,6 +38,7 @@ import com.google.common.io.Closer;
 import com.google.common.util.concurrent.Striped;
 
 import gobblin.configuration.State;
+import gobblin.util.concurrent.GobblinCallable;
 
 
 /**
@@ -130,10 +130,10 @@ public class ParallelRunner implements Closeable {
    */
   public <T extends State> void serializeToFile(final T state, final Path outputFilePath) {
     // Use a Callable with a Void return type to allow exceptions to be thrown
-    this.futures.add(new NamedFuture(this.executor.submit(new Callable<Void>() {
+    this.futures.add(new NamedFuture(this.executor.submit(new GobblinCallable<Void>() {
 
       @Override
-      public Void call() throws Exception {
+      public Void callImpl() throws Exception {
         SerializationUtils.serializeState(fs, outputFilePath, state);
         return null;
       }
@@ -153,10 +153,10 @@ public class ParallelRunner implements Closeable {
    * @param <T> the {@link State} object type
    */
   public <T extends State> void deserializeFromFile(final T state, final Path inputFilePath) {
-    this.futures.add(new NamedFuture(this.executor.submit(new Callable<Void>() {
+    this.futures.add(new NamedFuture(this.executor.submit(new GobblinCallable<Void>() {
 
       @Override
-      public Void call() throws Exception {
+      public Void callImpl() throws Exception {
         SerializationUtils.deserializeState(fs, inputFilePath, state);
         return null;
       }
@@ -179,9 +179,9 @@ public class ParallelRunner implements Closeable {
    */
   public <T extends State> void deserializeFromSequenceFile(final Class<? extends Writable> keyClass,
       final Class<T> stateClass, final Path inputFilePath, final Collection<T> states, final boolean deleteAfter) {
-    this.futures.add(new NamedFuture(this.executor.submit(new Callable<Void>() {
+    this.futures.add(new NamedFuture(this.executor.submit(new GobblinCallable<Void>() {
       @Override
-      public Void call() throws Exception {
+      public Void callImpl() throws Exception {
         Closer closer = Closer.create();
         try {
           @SuppressWarnings("deprecation")
@@ -218,9 +218,9 @@ public class ParallelRunner implements Closeable {
    * @param path path to be deleted.
    */
   public void deletePath(final Path path, final boolean recursive) {
-    this.futures.add(new NamedFuture(this.executor.submit(new Callable<Void>() {
+    this.futures.add(new NamedFuture(this.executor.submit(new GobblinCallable<Void>() {
       @Override
-      public Void call() throws Exception {
+      public Void callImpl() throws Exception {
         Lock lock = locks.get(path.toString());
         lock.lock();
         try {
@@ -246,9 +246,9 @@ public class ParallelRunner implements Closeable {
    * @param group an optional group name for the destination path
    */
   public void renamePath(final Path src, final Path dst, final Optional<String> group) {
-    this.futures.add(new NamedFuture(this.executor.submit(new Callable<Void>() {
+    this.futures.add(new NamedFuture(this.executor.submit(new GobblinCallable<Void>() {
       @Override
-      public Void call() throws Exception {
+      public Void callImpl() throws Exception {
         Lock lock = locks.get(src.toString());
         lock.lock();
         try {
@@ -302,9 +302,9 @@ public class ParallelRunner implements Closeable {
    */
   public void movePath(final Path src, final FileSystem dstFs, final Path dst, final boolean overwrite,
                        final Optional<String> group) {
-      this.futures.add(new NamedFuture(this.executor.submit(new Callable<Void>() {
+      this.futures.add(new NamedFuture(this.executor.submit(new GobblinCallable<Void>() {
         @Override
-        public Void call() throws Exception {
+        public Void callImpl() throws Exception {
           Lock lock = locks.get(src.toString());
           lock.lock();
           try {

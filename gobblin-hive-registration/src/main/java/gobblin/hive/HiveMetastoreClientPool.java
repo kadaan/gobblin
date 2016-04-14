@@ -17,7 +17,6 @@ import lombok.Getter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.pool2.impl.GenericObjectPool;
@@ -35,6 +34,7 @@ import com.google.common.io.Closer;
 
 import gobblin.configuration.State;
 import gobblin.util.AutoReturnableObject;
+import gobblin.util.concurrent.GobblinCallable;
 
 
 /**
@@ -71,8 +71,8 @@ public class HiveMetastoreClientPool {
   public static HiveMetastoreClientPool get(final Properties properties, final Optional<String> metastoreURI)
       throws IOException {
     try {
-      return poolCache.get(metastoreURI, new Callable<HiveMetastoreClientPool>() {
-        @Override public HiveMetastoreClientPool call() throws Exception {
+      return poolCache.get(metastoreURI, new GobblinCallable<HiveMetastoreClientPool>() {
+        @Override public HiveMetastoreClientPool callImpl() throws Exception {
           return new HiveMetastoreClientPool(properties, metastoreURI);
         }
       });

@@ -50,7 +50,7 @@ public class TestHelper {
   static final String TEST_PARTICIPANT_CONTAINER_ID = "container_1447921358856_210676_01_000002";
 
   static final String TEST_JOB_NAME = "TestJob";
-  static final String TEST_JOB_ID = JobLauncherUtils.newJobId(TEST_JOB_NAME);
+  static final String TEST_JOB_ID = JobLauncherUtils.newJobId(TEST_JOB_NAME).toString();
   static final String TEST_TASK_ID = JobLauncherUtils.newTaskId(TEST_JOB_ID, 0);
 
   static final String SOURCE_SCHEMA =

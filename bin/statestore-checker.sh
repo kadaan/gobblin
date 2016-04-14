@@ -1,6 +1,7 @@
 #!/bin/bash
 
 FWDIR="$(cd `dirname $0`/..; pwd)"
+FWDIR_CONF=${FWDIR}/conf
 
 GOBBLIN_JARS=""
 for jar in $(ls -d $FWDIR/lib/*); do
@@ -12,6 +13,9 @@ for jar in $(ls -d $FWDIR/lib/*); do
 done
 
 CLASSPATH=$GOBBLIN_JARS
-CLASSPATH+=":$FWDIR/conf"
+CLASSPATH+=":$FWDIR_CONF"
 
-java -cp $CLASSPATH gobblin.runtime.util.JobStateToJsonConverter $@
+java -Dlogback.configurationFile=file://$FWDIR_CONF/logback-gobblin.xml \
+    -cp $CLASSPATH \
+    gobblin.runtime.util.JobStateToJsonConverter \
+    $@

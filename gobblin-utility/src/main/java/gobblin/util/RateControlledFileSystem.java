@@ -32,9 +32,9 @@ import com.google.common.base.Optional;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import gobblin.util.concurrent.GobblinCallable;
 import gobblin.util.limiter.Limiter;
 import gobblin.util.limiter.RateBasedLimiter;
-import gobblin.util.Decorator;
 
 
 /**
@@ -84,9 +84,9 @@ public class RateControlledFileSystem extends FileSystem implements Decorator {
   public RateControlledFileSystem(FileSystem fs, final long limitPerSecond) {
     this.fs = fs;
     this.limitPerSecond = limitPerSecond;
-    this.callableLimiter = new Callable<Limiter>() {
+    this.callableLimiter = new GobblinCallable<Limiter>() {
       @Override
-      public Limiter call() throws Exception {
+      public Limiter callImpl() throws Exception {
         return new RateBasedLimiter(limitPerSecond);
       }
     };

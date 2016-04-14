@@ -14,12 +14,12 @@ package gobblin.data.management.trash;
 
 import gobblin.util.Decorator;
 import gobblin.util.ExecutorsUtils;
+import gobblin.util.concurrent.GobblinCallable;
 import gobblin.util.executors.ScalingThreadPoolExecutor;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -88,8 +88,8 @@ public class AsyncTrash implements GobblinProxiedTrash, Closeable, Decorator {
    * @return true if operation succeeded.
    */
   public ListenableFuture<Boolean> moveToTrashAsUserFuture(final Path path, final String user) {
-    return this.executor.submit(new Callable<Boolean>() {
-      @Override public Boolean call() throws IOException {
+    return this.executor.submit(new GobblinCallable<Boolean>() {
+      @Override public Boolean callImpl() throws IOException {
         return innerTrash.moveToTrashAsUser(path, user);
       }
     });
@@ -106,8 +106,8 @@ public class AsyncTrash implements GobblinProxiedTrash, Closeable, Decorator {
    * @return true if operation succeeded.
    */
   public ListenableFuture<Boolean> moveToTrashAsOwnerFuture(final Path path) {
-    return this.executor.submit(new Callable<Boolean>() {
-      @Override public Boolean call() throws IOException {
+    return this.executor.submit(new GobblinCallable<Boolean>() {
+      @Override public Boolean callImpl() throws IOException {
         return innerTrash.moveToTrashAsOwner(path);
       }
     });
@@ -124,8 +124,8 @@ public class AsyncTrash implements GobblinProxiedTrash, Closeable, Decorator {
    * @return true if operation succeeded.
    */
   public ListenableFuture<Boolean> moveToTrashFuture(final Path path) {
-    return this.executor.submit(new Callable<Boolean>() {
-      @Override public Boolean call() throws IOException {
+    return this.executor.submit(new GobblinCallable<Boolean>() {
+      @Override public Boolean callImpl() throws IOException {
         return innerTrash.moveToTrash(path);
       }
     });

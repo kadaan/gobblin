@@ -15,7 +15,6 @@ package gobblin.compaction.mapreduce;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -54,6 +53,7 @@ import gobblin.metrics.event.EventSubmitter;
 import gobblin.metrics.event.sla.SlaEventSubmitter;
 import gobblin.util.ExecutorsUtils;
 import gobblin.util.FileListUtils;
+import gobblin.util.concurrent.GobblinCallable;
 import gobblin.util.HadoopUtils;
 import gobblin.util.RecordCountProvider;
 import gobblin.util.executors.ScalingThreadPoolExecutor;
@@ -291,9 +291,9 @@ public abstract class MRCompactorJobRunner implements Runnable, Comparable<MRCom
             ExecutorsUtils.newThreadFactory(Optional.of(LOG), Optional.of(this.dataset.getName() + "-copy-data")));
     List<Future<?>> futures = Lists.newArrayList();
     for (final Path filePath : inputFilePaths) {
-      Future<Void> future = executor.submit(new Callable<Void>() {
+      Future<Void> future = executor.submit(new GobblinCallable<Void>() {
         @Override
-        public Void call() throws Exception {
+        public Void callImpl() throws Exception {
           Path convertedFilePath =
               outputRecordCountProvider.convertPath(lateInputRecordCountProvider.restoreFilePath(filePath),
                   inputRecordCountProvider);

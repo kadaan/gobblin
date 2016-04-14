@@ -34,6 +34,7 @@ import gobblin.metrics.context.NameConflictException;
 import gobblin.metrics.notification.MetricContextCleanupNotification;
 import gobblin.metrics.notification.NewMetricContextNotification;
 import gobblin.metrics.reporter.ContextAwareReporter;
+import gobblin.util.concurrent.GobblinRunnable;
 import gobblin.util.ExecutorsUtils;
 
 
@@ -95,10 +96,10 @@ public class RootMetricContext extends MetricContext {
    * Checks the {@link ReferenceQueue} to find any {@link MetricContext}s that have been garbage collected, and sends a
    * {@link MetricContextCleanupNotification} to all targets.
    */
-  private class CheckReferenceQueue implements Runnable {
+  private class CheckReferenceQueue extends GobblinRunnable {
 
     @Override
-    public void run() {
+    public void runImpl() {
       Reference<? extends MetricContext> reference;
       while((reference = referenceQueue.poll()) != null) {
         ContextWeakReference contextReference = (ContextWeakReference)reference;

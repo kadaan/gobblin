@@ -28,7 +28,7 @@ dependencies {
   compile externalDependency.guava
   compile externalDependency.commonsLang
   compile externalDependency.slf4j
-  compile externalDependency.log4j
+  compile externalDependency.lombok
   compile externalDependency.commonsCli
   compile externalDependency.gson
   compile externalDependency.hiveCommon
@@ -49,6 +49,8 @@ dependencies {
     compile externalDependency.avroMapredH1
   }
   compile externalDependency.findBugsAnnotations
+
+  runtime externalDependency.logback
 
   testCompile project(":gobblin-example")
 

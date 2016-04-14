@@ -13,7 +13,6 @@
 package gobblin.runtime.util;
 
 import java.util.List;
-import java.util.concurrent.Callable;
 
 import com.google.common.collect.Lists;
 
@@ -23,6 +22,7 @@ import gobblin.metrics.Tag;
 import gobblin.runtime.JobState;
 import gobblin.runtime.TaskState;
 import gobblin.util.ClustersNames;
+import gobblin.util.concurrent.GobblinCallable;
 
 
 /**
@@ -72,8 +72,8 @@ public class JobMetrics extends GobblinMetrics {
    * @return a {@link JobMetrics} instance
    */
   public static JobMetrics get(final JobState jobState, final MetricContext parentContext) {
-    return (JobMetrics) GOBBLIN_METRICS_REGISTRY.getOrDefault(name(jobState), new Callable<GobblinMetrics>() {
-      @Override public GobblinMetrics call() throws Exception {
+    return (JobMetrics) GOBBLIN_METRICS_REGISTRY.getOrDefault(name(jobState), new GobblinCallable<GobblinMetrics>() {
+      @Override public GobblinMetrics callImpl() throws Exception {
         return new JobMetrics(jobState, parentContext);
       }
     });
@@ -86,8 +86,8 @@ public class JobMetrics extends GobblinMetrics {
    * @return a {@link JobMetrics} instance
    */
   public static JobMetrics get(final JobState jobState) {
-    return (JobMetrics) GOBBLIN_METRICS_REGISTRY.getOrDefault(name(jobState), new Callable<GobblinMetrics>() {
-      @Override public GobblinMetrics call() throws Exception {
+    return (JobMetrics) GOBBLIN_METRICS_REGISTRY.getOrDefault(name(jobState), new GobblinCallable<GobblinMetrics>() {
+      @Override public GobblinMetrics callImpl() throws Exception {
         return new JobMetrics(jobState);
       }
     });

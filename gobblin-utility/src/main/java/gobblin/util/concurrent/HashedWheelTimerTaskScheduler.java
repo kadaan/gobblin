@@ -12,8 +12,8 @@
 
 package gobblin.util.concurrent;
 
-
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.netty.util.HashedWheelTimer;
@@ -22,6 +22,7 @@ import org.jboss.netty.util.Timer;
 import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.google.common.base.Optional;
 
@@ -96,6 +97,7 @@ class HashedWheelTimerTaskScheduler<K, T extends ScheduledTask<K>> extends TaskS
     private final T task;
     private final long period;
     private final TimeUnit unit;
+    private final Map<String, String> context;
 
     private volatile Timeout future;
 
@@ -113,6 +115,7 @@ class HashedWheelTimerTaskScheduler<K, T extends ScheduledTask<K>> extends TaskS
       this.task = task;
       this.period = period;
       this.unit = unit;
+      this.context = MDC.getCopyOfContextMap();
       future = this.timer.newTimeout(this, this.period, this.unit);
     }
 
@@ -125,11 +128,20 @@ class HashedWheelTimerTaskScheduler<K, T extends ScheduledTask<K>> extends TaskS
     @Override
     @Synchronized
     public void run(Timeout timeout) throws Exception {
+      Map<String, String> originalContext = MDC.getCopyOfContextMap();
+      if (this.context != null) {
+        MDC.setContextMap(context);
+      }
       try {
         this.task.runOneIteration();
       } finally {
         if (future != null) {
           future = this.timer.newTimeout(this, this.period, this.unit);
+        }
+        if (originalContext != null) {
+          MDC.setContextMap(originalContext);
+        } else {
+          MDC.clear();
         }
       }
     }

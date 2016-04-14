@@ -13,19 +13,20 @@
 package gobblin.tunnel;
 
 import java.io.IOException;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gobblin.util.concurrent.GobblinCallable;
+
+
 /**
  * Handler for accepting connections from the client on the socket the Tunnel listens on.
  */
-class AcceptHandler implements Callable<HandlerState> {
+class AcceptHandler extends GobblinCallable<HandlerState> {
   private static final Logger LOG = LoggerFactory.getLogger(Tunnel.class);
 
   private final ServerSocketChannel server;
@@ -40,7 +41,7 @@ class AcceptHandler implements Callable<HandlerState> {
   }
 
   @Override
-  public HandlerState call()
+  public HandlerState callImpl()
       throws Exception {
     SocketChannel client = server.accept();
 

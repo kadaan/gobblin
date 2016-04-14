@@ -28,6 +28,8 @@ dependencies {
     compile externalDependency.salesforceWsc
     compile externalDependency.salesforcePartner
 
+    runtime externalDependency.logback
+
     testCompile externalDependency.testng
 }
 

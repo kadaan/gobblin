@@ -12,12 +12,14 @@ apply plugin: 'java'
 
 dependencies {
     compile project(":gobblin-config-management:gobblin-config-core")
+    compile project(":gobblin-utility")
 
     compile externalDependency.guava
     compile externalDependency.lombok
     compile externalDependency.slf4j
-    compile externalDependency.log4j
     compile externalDependency.typesafeConfig
+
+    runtime externalDependency.logback
 
     testCompile externalDependency.testng
     testCompile externalDependency.mockito
