@@ -73,9 +73,9 @@ import gobblin.util.ParallelRunner;
  */
 public abstract class AbstractJobLauncher implements JobLauncher {
 
-  private static final Logger LOG = LoggerFactory.getLogger(AbstractJobLauncher.class);
-
   public static final String TASK_STATE_STORE_TABLE_SUFFIX = ".tst";
+
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractJobLauncher.class);
 
   public static final String JOB_STATE_FILE_NAME = "job.state";
 
@@ -613,8 +613,8 @@ public abstract class AbstractJobLauncher implements JobLauncher {
       String taskId = workUnit.getProp(ConfigurationKeys.TASK_ID_KEY);
       // Delete the task state file for the task if it already exists.
       // This usually happens if the task is retried upon failure.
-      if (taskStateStore.exists(jobId, taskId + AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX)) {
-        taskStateStore.delete(jobId, taskId + AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX);
+      if (taskStateStore.exists(jobId, taskId)) {
+        taskStateStore.delete(jobId, taskId);
       }
     }
 
@@ -635,8 +635,7 @@ public abstract class AbstractJobLauncher implements JobLauncher {
     boolean hasTaskFailure = false;
     for (Task task : tasks) {
       logger.info("Writing task state for task " + task.getTaskId());
-      taskStateStore.put(task.getJobId(), task.getTaskId() + AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX,
-          task.getTaskState());
+      taskStateStore.put(task.getJobId(), task.getTaskId(), task.getTaskState());
 
       if (task.getTaskState().getWorkingState() == WorkUnitState.WorkingState.FAILED) {
         hasTaskFailure = true;

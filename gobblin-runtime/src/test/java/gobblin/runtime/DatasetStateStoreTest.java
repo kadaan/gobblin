@@ -74,10 +74,11 @@ public class DatasetStateStoreTest {
     Properties properties = new Properties();
     properties.load(new FileReader("gobblin-test/resource/gobblin.test.properties"));
 
-    this.datasetStateStore = new FsStateStore<JobState.DatasetState>(
+    this.datasetStateStore = new FsStateStore<>(
         properties.getProperty(ConfigurationKeys.STATE_STORE_FS_URI_KEY, ConfigurationKeys.LOCAL_FS_URI),
         properties.getProperty(ConfigurationKeys.STATE_STORE_ROOT_DIR_KEY),
-        JobState.DatasetState.class);
+        JobState.DatasetState.class,
+        FsDatasetStateStore.DATASET_STATE_STORE_TABLE_SUFFIX);
 
     this.jobConfig.putAll(properties);
     this.jobConfig.setProperty(ConfigurationKeys.JOB_NAME_KEY, JOB_NAME);
@@ -124,7 +125,7 @@ public class DatasetStateStoreTest {
   }
 
   private void verifyJobState(int run) throws IOException {
-    List<JobState.DatasetState> datasetStateList = this.datasetStateStore.getAll(JOB_NAME, "current.jst");
+    List<JobState.DatasetState> datasetStateList = this.datasetStateStore.getAll(JOB_NAME, "current");
     Assert.assertEquals(datasetStateList.size(), 1);
 
     JobState jobState = datasetStateList.get(0);
@@ -164,8 +165,8 @@ public class DatasetStateStoreTest {
     @Override
     public List<WorkUnit> getWorkunits(SourceState sourceState) {
       SourceState previousSourceState = sourceState.getPreviousSourceState();
-        sourceState.setProp(CURRENT_RUN_KEY,
-            previousSourceState != null ? previousSourceState.getPropAsInt(CURRENT_RUN_KEY) + 1 : 1);
+      sourceState.setProp(CURRENT_RUN_KEY,
+          previousSourceState != null ? previousSourceState.getPropAsInt(CURRENT_RUN_KEY) + 1 : 1);
       sourceState.setProp(FOO, BAR);
 
       if (Iterables.isEmpty(sourceState.getPreviousWorkUnitStates())) {

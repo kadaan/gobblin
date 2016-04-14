@@ -498,7 +498,7 @@ public class MRJobLauncher extends AbstractJobLauncher {
         this.fs = FileSystem.get(context.getConfiguration());
         this.taskStateStore =
             new FsStateStore<>(this.fs, SequenceFileOutputFormat.getOutputPath(context).toUri().getPath(),
-                TaskState.class);
+                TaskState.class, AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX);
 
         Path jobStateFilePath = new Path(context.getConfiguration().get(ConfigurationKeys.JOB_STATE_FILE_PATH_KEY));
         SerializationUtils.deserializeState(this.fs, jobStateFilePath, this.jobState);

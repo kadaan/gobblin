@@ -172,7 +172,7 @@ public class GobblinHelixJobLauncherTest {
     TestHelper.assertGenericRecords(this.jobOutputFile, schema);
 
     List<JobState.DatasetState> datasetStates = this.fsDatasetStateStore.getAll(this.jobName,
-        FsDatasetStateStore.CURRENT_DATASET_STATE_FILE_SUFFIX + FsDatasetStateStore.DATASET_STATE_STORE_TABLE_SUFFIX);
+        FsDatasetStateStore.CURRENT_FILE_NAME);
     Assert.assertEquals(datasetStates.size(), 1);
     JobState.DatasetState datasetState = datasetStates.get(0);
     Assert.assertEquals(datasetState.getCompletedTasks(), 1);

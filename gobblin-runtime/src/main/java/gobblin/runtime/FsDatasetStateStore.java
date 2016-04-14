@@ -15,7 +15,8 @@ package gobblin.runtime;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -23,18 +24,19 @@ import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closer;
 
 import gobblin.configuration.ConfigurationKeys;
 import gobblin.metastore.FsStateStore;
+
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -53,33 +55,35 @@ import gobblin.metastore.FsStateStore;
  *
  * @author Yinan Li
  */
+@Slf4j
 public class FsDatasetStateStore extends FsStateStore<JobState.DatasetState> {
-
-  private static final Logger LOGGER = LoggerFactory.getLogger(FsDatasetStateStore.class);
+  private static final Pattern DATASET_URN_PATTERN = Pattern.compile("\\A(?:(.+)-)?.+\\.jst\\z");
 
   public static final String DATASET_STATE_STORE_TABLE_SUFFIX = ".jst";
 
-  public static final String CURRENT_DATASET_STATE_FILE_SUFFIX = "current";
-
   public FsDatasetStateStore(String fsUri, String storeRootDir) throws IOException {
-    super(fsUri, storeRootDir, JobState.DatasetState.class);
+    super(fsUri, storeRootDir, JobState.DatasetState.class, DATASET_STATE_STORE_TABLE_SUFFIX);
     this.useTmpFileForPut = false;
   }
 
   public FsDatasetStateStore(FileSystem fs, String storeRootDir) throws IOException {
-    super(fs, storeRootDir, JobState.DatasetState.class);
+    super(fs, storeRootDir, JobState.DatasetState.class, DATASET_STATE_STORE_TABLE_SUFFIX);
     this.useTmpFileForPut = false;
   }
 
   public FsDatasetStateStore(String storeUrl) throws IOException {
-    super(storeUrl, JobState.DatasetState.class);
+    super(storeUrl, JobState.DatasetState.class, DATASET_STATE_STORE_TABLE_SUFFIX);
     this.useTmpFileForPut = false;
   }
 
   @Override
   public JobState.DatasetState get(String storeName, String tableName, String stateId) throws IOException {
-    Path tablePath = new Path(new Path(this.storeRootDir, storeName), tableName);
-    if (!this.fs.exists(tablePath)) {
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(storeName), "Store name is null or empty.");
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(tableName), "Table name is null or empty.");
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(stateId), "State id is null or empty.");
+
+    Path tablePath = getTablePath(storeName, tableName);
+    if (tablePath == null || !this.fs.exists(tablePath)) {
       return null;
     }
 
@@ -116,10 +120,13 @@ public class FsDatasetStateStore extends FsStateStore<JobState.DatasetState> {
 
   @Override
   public List<JobState.DatasetState> getAll(String storeName, String tableName) throws IOException {
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(storeName), "Store name is null or empty.");
+    Preconditions.checkArgument(!Strings.isNullOrEmpty(tableName), "Table name is null or empty.");
+
     List<JobState.DatasetState> states = Lists.newArrayList();
 
-    Path tablePath = new Path(new Path(this.storeRootDir, storeName), tableName);
-    if (!this.fs.exists(tablePath)) {
+    Path tablePath = getTablePath(storeName, tableName);
+    if (tablePath == null || !this.fs.exists(tablePath)) {
       return states;
     }
 
@@ -153,11 +160,6 @@ public class FsDatasetStateStore extends FsStateStore<JobState.DatasetState> {
     return states;
   }
 
-  @Override
-  public List<JobState.DatasetState> getAll(String storeName) throws IOException {
-    return super.getAll(storeName);
-  }
-
   /**
    * Get a {@link Map} from dataset URNs to the latest {@link JobState.DatasetState}s.
    *
@@ -166,28 +168,14 @@ public class FsDatasetStateStore extends FsStateStore<JobState.DatasetState> {
    * @throws IOException if there's something wrong reading the {@link JobState.DatasetState}s
    */
   public Map<String, JobState.DatasetState> getLatestDatasetStatesByUrns(String jobName) throws IOException {
-    Path stateStorePath = new Path(this.storeRootDir, jobName);
-    if (!this.fs.exists(stateStorePath)) {
-      return ImmutableMap.of();
-    }
-
-    FileStatus[] stateStoreFileStatuses = this.fs.listStatus(stateStorePath, new PathFilter() {
-      @Override
-      public boolean accept(Path path) {
-        return path.getName().endsWith(CURRENT_DATASET_STATE_FILE_SUFFIX + DATASET_STATE_STORE_TABLE_SUFFIX);
-      }
-    });
-
-    if (stateStoreFileStatuses == null || stateStoreFileStatuses.length == 0) {
-      return ImmutableMap.of();
-    }
-
+    Map<Optional<String>, String> latestDatasetStateFilePathsByUrns = getLatestDatasetStateFilePathsByUrns(jobName);
     Map<String, JobState.DatasetState> datasetStatesByUrns = Maps.newHashMap();
-    for (FileStatus stateStoreFileStatus : stateStoreFileStatuses) {
-      List<JobState.DatasetState> previousDatasetStates = getAll(jobName, stateStoreFileStatus.getPath().getName());
+    for (Map.Entry<Optional<String>, String> filePath : latestDatasetStateFilePathsByUrns.entrySet()) {
+      List<JobState.DatasetState> previousDatasetStates = getAll(jobName, filePath.getValue());
       if (!previousDatasetStates.isEmpty()) {
         // There should be a single dataset state on the list if the list is not empty
         JobState.DatasetState previousDatasetState = previousDatasetStates.get(0);
+        previousDatasetState.setProp(ConfigurationKeys.DATASET_STATE_ID_KEY, filePath.getValue());
         datasetStatesByUrns.put(previousDatasetState.getProp(ConfigurationKeys.DATASET_URN_KEY,
             ConfigurationKeys.DEFAULT_DATASET_URN), previousDatasetState);
       }
@@ -211,10 +199,9 @@ public class FsDatasetStateStore extends FsStateStore<JobState.DatasetState> {
    * @throws IOException
    */
   public JobState.DatasetState getLatestDatasetState(String storeName, String datasetUrn) throws IOException {
-    String alias = Strings.isNullOrEmpty(datasetUrn) ?
-        CURRENT_DATASET_STATE_FILE_SUFFIX + DATASET_STATE_STORE_TABLE_SUFFIX
-        : datasetUrn + "-" + CURRENT_DATASET_STATE_FILE_SUFFIX + DATASET_STATE_STORE_TABLE_SUFFIX;
-    return get(storeName, alias, datasetUrn);
+    Optional<String> sanitizedDatasetUrn = sanitizeDatasetUrn(datasetUrn);
+    String tableName = sanitizedDatasetUrn.isPresent() ? sanitizedDatasetUrn.get() + "-" + CURRENT_FILE_NAME : CURRENT_FILE_NAME;
+    return get(storeName, tableName, datasetUrn);
   }
 
   /**
@@ -228,17 +215,54 @@ public class FsDatasetStateStore extends FsStateStore<JobState.DatasetState> {
     String jobName = datasetState.getJobName();
     String jobId = datasetState.getJobId();
 
-    datasetUrn = CharMatcher.is(':').replaceFrom(datasetUrn, '.');
-    String tableName = Strings.isNullOrEmpty(datasetUrn) ? jobId + DATASET_STATE_STORE_TABLE_SUFFIX
-        : datasetUrn + "-" + jobId + DATASET_STATE_STORE_TABLE_SUFFIX;
-    LOGGER.info("Persisting " + tableName + " to the job state store");
+    Optional<String> sanitizedDatasetUrn = sanitizeDatasetUrn(datasetUrn);
+    String tableName = sanitizedDatasetUrn.isPresent() ?
+        sanitizedDatasetUrn.get() + TABLE_PREFIX_SEPARATOR + jobId : jobId;
+    log.info("Persisting " + tableName + " to the job state store");
     put(jobName, tableName, datasetState);
-    createAlias(jobName, tableName, getAliasName(datasetUrn));
   }
 
-  private String getAliasName(String datasetUrn) {
-    return Strings.isNullOrEmpty(datasetUrn) ?
-        CURRENT_DATASET_STATE_FILE_SUFFIX + DATASET_STATE_STORE_TABLE_SUFFIX :
-        datasetUrn + "-" + CURRENT_DATASET_STATE_FILE_SUFFIX + DATASET_STATE_STORE_TABLE_SUFFIX;
+  private Optional<String> sanitizeDatasetUrn(final String datasetUrn) {
+    if (Strings.isNullOrEmpty(datasetUrn)) {
+      return Optional.absent();
+    }
+    return Optional.of(CharMatcher.is(':').replaceFrom(datasetUrn, '.'));
+  }
+
+  private Map<Optional<String>, String> getLatestDatasetStateFilePathsByUrns(String storeName) throws IOException {
+    Path stateStorePath = new Path(this.storeRootDir, storeName);
+    if (!this.fs.exists(stateStorePath)) {
+      return Maps.newHashMap();
+    }
+
+    FileStatus[] stateStoreFileStatuses = this.fs.listStatus(stateStorePath, new PathFilter() {
+      @Override
+      public boolean accept(Path path) {
+        return path.getName().endsWith(DATASET_STATE_STORE_TABLE_SUFFIX);
+      }
+    });
+
+    Map<Optional<String>, String> datasetStateFilePathsByUrns = Maps.newHashMap();
+    for (FileStatus fileStatus : stateStoreFileStatuses) {
+      String tableName = fileStatus.getPath().getName();
+      Matcher matcher = DATASET_URN_PATTERN.matcher(tableName);
+      if (matcher.find()) {
+        Optional<String> datasetUrn = sanitizeDatasetUrn(matcher.group(1));
+        if (!datasetStateFilePathsByUrns.containsKey(datasetUrn)) {
+          log.debug("Latest table for {} dataset set to {}", datasetUrn.or("DEFAULT"), tableName);
+          datasetStateFilePathsByUrns.put(datasetUrn, tableName);
+        } else {
+          String previousTableName = datasetStateFilePathsByUrns.get(datasetUrn);
+          if (tableName.compareTo(previousTableName) > 0) {
+            log.debug("Latest table for {} dataset set to {} instead of {}", datasetUrn.or("DEFAULT"), tableName, previousTableName);
+            datasetStateFilePathsByUrns.put(datasetUrn, tableName);
+          } else {
+            log.debug("Latest table for {} dataset left as {}. Table {} is being ignored", datasetUrn.or("DEFAULT"), previousTableName, tableName);
+          }
+        }
+      }
+    }
+
+    return datasetStateFilePathsByUrns;
   }
 }

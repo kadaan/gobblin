@@ -29,6 +29,7 @@ import gobblin.annotation.Alpha;
 import gobblin.admin.AdminWebServer;
 import gobblin.configuration.ConfigurationKeys;
 import gobblin.configuration.State;
+import gobblin.metastore.util.StateStoreCleaner;
 import gobblin.metrics.GobblinMetrics;
 import gobblin.rest.JobExecutionInfoServer;
 import gobblin.runtime.services.JMXReportingService;
@@ -96,6 +97,7 @@ public class ServiceBasedAppLauncher implements ApplicationLauncher {
     this.services = new ArrayList<>();
 
     // Add core Services needed for any application
+    addStateStoreCleaner(properties);
     addJobExecutionServerAndAdminUI(properties);
     addMetricsService(properties);
     addJMXReportingService();
@@ -213,6 +215,10 @@ public class ServiceBasedAppLauncher implements ApplicationLauncher {
 
   private void addJMXReportingService() {
     addService(new JMXReportingService());
+  }
+
+  private void addStateStoreCleaner(Properties properties) throws IOException {
+    addService(new StateStoreCleaner(properties));
   }
 
   private void addServicesFromProperties(Properties properties)
