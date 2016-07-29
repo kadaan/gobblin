@@ -134,28 +134,33 @@ public abstract class AbstractJobLauncher implements JobLauncher {
           this.jobProps .getProperty(ConfigurationKeys.JOB_NAME_KEY)));
     }
 
-    this.jobContext = new JobContext(this.jobProps, LOG);
-    this.eventBus.register(this.jobContext);
+    try {
+      this.jobContext = new JobContext(this.jobProps, LOG);
+      this.eventBus.register(this.jobContext);
 
-    this.cancellationExecutor = Executors.newSingleThreadExecutor(
-        ExecutorsUtils.newThreadFactory(Optional.of(LOG), Optional.of("CancellationExecutor")));
+      this.cancellationExecutor = Executors.newSingleThreadExecutor(
+          ExecutorsUtils.newThreadFactory(Optional.of(LOG), Optional.of("CancellationExecutor")));
 
-    this.runtimeMetricContext =
-        this.jobContext.getJobMetricsOptional().transform(new Function<JobMetrics, MetricContext>() {
-          @Override
-          public MetricContext apply(JobMetrics input) {
-            return input.getMetricContext();
-          }
-        });
+      this.runtimeMetricContext =
+          this.jobContext.getJobMetricsOptional().transform(new Function<JobMetrics, MetricContext>() {
+            @Override
+            public MetricContext apply(JobMetrics input) {
+              return input.getMetricContext();
+            }
+          });
 
-    metadataTags = addClusterNameTags(metadataTags);
-    this.eventSubmitter = buildEventSubmitter(metadataTags);
+      metadataTags = addClusterNameTags(metadataTags);
+      this.eventSubmitter = buildEventSubmitter(metadataTags);
 
-    // Add all custom tags to the JobState so that tags are added to any new TaskState created
-    JobMetrics.addCustomTagToState(this.jobContext.getJobState(), metadataTags);
+      // Add all custom tags to the JobState so that tags are added to any new TaskState created
+      JobMetrics.addCustomTagToState(this.jobContext.getJobState(), metadataTags);
 
-    JobExecutionEventSubmitter jobExecutionEventSubmitter = new JobExecutionEventSubmitter(this.eventSubmitter);
-    this.mandatoryJobListeners.add(new JobExecutionEventSubmitterListener(jobExecutionEventSubmitter));
+      JobExecutionEventSubmitter jobExecutionEventSubmitter = new JobExecutionEventSubmitter(this.eventSubmitter);
+      this.mandatoryJobListeners.add(new JobExecutionEventSubmitterListener(jobExecutionEventSubmitter));
+    } catch (Exception e) {
+      unlockJob();
+      throw e;
+    }
   }
 
   /**
