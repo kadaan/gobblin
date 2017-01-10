@@ -69,7 +69,8 @@ public class TaskStateCollectorServiceTest {
     this.localFs = FileSystem.getLocal(new Configuration());
     this.localFs.mkdirs(this.outputTaskStateDir);
 
-    this.taskStateStore = new FsStateStore<>(this.localFs, this.outputTaskStateDir.toUri().getPath(), TaskState.class);
+    this.taskStateStore = new FsStateStore<>(this.localFs, this.outputTaskStateDir.toUri().getPath(), TaskState.class,
+        AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX);
 
     this.taskStateCollectorService = new TaskStateCollectorService(new Properties(), this.jobState, this.eventBus,
         this.localFs, new Path(this.outputTaskStateDir, JOB_ID));

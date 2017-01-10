@@ -160,7 +160,7 @@ public class MRJobLauncher extends AbstractJobLauncher {
         new Path(this.jobProps.getProperty(ConfigurationKeys.MR_JOB_ROOT_DIR_KEY), this.jobContext.getJobName()),
         this.jobContext.getJobId());
     if (this.fs.exists(this.mrJobDir)) {
-      LOG.warn("Job working directory already exists for job " + this.jobContext.getJobName());
+      LOG.warn("Job working directory already storeExists for job " + this.jobContext.getJobName());
       this.fs.delete(this.mrJobDir, true);
     }
     this.jarsDir = this.jobProps.containsKey(ConfigurationKeys.MR_JARS_DIR) ? new Path(
@@ -556,7 +556,8 @@ public class MRJobLauncher extends AbstractJobLauncher {
             isSpeculativeExecutionEnabled(HadoopUtils.getStateFromConf(context.getConfiguration()).getProperties());
         this.fs = FileSystem.get(context.getConfiguration());
         this.taskStateStore =
-            new FsStateStore<>(this.fs, FileOutputFormat.getOutputPath(context).toUri().getPath(), TaskState.class);
+            new FsStateStore<>(this.fs, FileOutputFormat.getOutputPath(context).toUri().getPath(), TaskState.class, 
+            AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX);
 
         String jobStateFileName = context.getConfiguration().get(ConfigurationKeys.JOB_STATE_DISTRIBUTED_CACHE_NAME);
         boolean foundStateFile = false;

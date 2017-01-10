@@ -103,7 +103,8 @@ public class GobblinHelixTask implements Task {
 
     this.fs = fs;
     Path taskStateOutputDir = new Path(appWorkDir, GobblinClusterConfigurationKeys.OUTPUT_TASK_STATE_DIR_NAME);
-    this.taskStateStore = new FsStateStore<>(this.fs, taskStateOutputDir.toString(), TaskState.class);
+    this.taskStateStore = new FsStateStore<>(this.fs, taskStateOutputDir.toString(), TaskState.class,
+        AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX);
 
     Path jobStateFilePath = new Path(appWorkDir, this.jobId + "." + AbstractJobLauncher.JOB_STATE_FILE_NAME);
     SerializationUtils.deserializeState(this.fs, jobStateFilePath, this.jobState);

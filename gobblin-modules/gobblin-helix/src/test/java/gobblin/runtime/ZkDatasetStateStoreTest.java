@@ -55,7 +55,8 @@ public class ZkDatasetStateStoreTest {
   public void setUp() throws Exception {
     Properties props = new Properties();
     testingServer = new TestingServer(-1);
-    zkJobStateStore = new ZkStateStore<>(testingServer.getConnectString(), "/STATE_STORE/TEST", false, JobState.class);
+    zkJobStateStore = new ZkStateStore<>(testingServer.getConnectString(), "/STATE_STORE/TEST", false,
+            JobState.class, ZkDatasetStateStore.DATASET_STATE_STORE_TABLE_SUFFIX);
 
     props.put(ZkStateStoreConfigurationKeys.STATE_STORE_ZK_CONNECT_STRING_KEY, testingServer.getConnectString());
     props.put(ConfigurationKeys.STATE_STORE_ROOT_DIR_KEY, "/STATE_STORE/TEST2");
@@ -91,9 +92,7 @@ public class ZkDatasetStateStoreTest {
       jobState.addTaskState(taskState);
     }
 
-    zkJobStateStore.put(TEST_JOB_NAME,
-        ZkDatasetStateStore.CURRENT_DATASET_STATE_FILE_SUFFIX + ZkDatasetStateStore.DATASET_STATE_STORE_TABLE_SUFFIX,
-        jobState);
+    zkJobStateStore.put(TEST_JOB_NAME, "TestJob0", jobState);
   }
 
   @Test(dependsOnMethods = "testPersistJobState")

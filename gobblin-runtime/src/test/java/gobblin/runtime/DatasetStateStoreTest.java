@@ -80,7 +80,8 @@ public class DatasetStateStoreTest {
 
     this.datasetStateStore = new FsStateStore<>(
         properties.getProperty(ConfigurationKeys.STATE_STORE_FS_URI_KEY, ConfigurationKeys.LOCAL_FS_URI),
-        properties.getProperty(ConfigurationKeys.STATE_STORE_ROOT_DIR_KEY), JobState.DatasetState.class);
+        properties.getProperty(ConfigurationKeys.STATE_STORE_ROOT_DIR_KEY), JobState.DatasetState.class,
+            FsDatasetStateStore.DATASET_STATE_STORE_TABLE_SUFFIX);
 
     // clear data that might be there from a prior run
     this.datasetStateStore.delete(JOB_NAME);
@@ -121,7 +122,7 @@ public class DatasetStateStoreTest {
   }
 
   private void verifyJobState(int run) throws IOException {
-    List<JobState.DatasetState> datasetStateList = this.datasetStateStore.getAll(JOB_NAME, "current.jst");
+    List<JobState.DatasetState> datasetStateList = this.datasetStateStore.getAll(JOB_NAME, "current");
     Assert.assertEquals(datasetStateList.size(), 1);
 
     JobState jobState = datasetStateList.get(0);

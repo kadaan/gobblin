@@ -205,7 +205,7 @@ public class TaskState extends WorkUnitState {
   }
 
   /**
-   * Get the {@link ConfigurationKeys#TASK_FAILURE_EXCEPTION_KEY} if it exists, else return {@link Optional#absent()}.
+   * Get the {@link ConfigurationKeys#TASK_FAILURE_EXCEPTION_KEY} if it storeExists, else return {@link Optional#absent()}.
    */
   public Optional<String> getTaskFailureException() {
     return Optional.fromNullable(this.getProp(ConfigurationKeys.TASK_FAILURE_EXCEPTION_KEY));
@@ -349,7 +349,7 @@ public class TaskState extends WorkUnitState {
         .value(this.getTaskDuration()).name("retry count")
         .value(this.getPropAsInt(ConfigurationKeys.TASK_RETRIES_KEY, 0));
 
-    // Also add failure exception information if it exists. This information is useful even in the
+    // Also add failure exception information if it storeExists. This information is useful even in the
     // case that the task finally succeeds so we know what happened in the course of task execution.
     if (getTaskFailureException().isPresent()) {
       jsonWriter.name("exception").value(getTaskFailureException().get());

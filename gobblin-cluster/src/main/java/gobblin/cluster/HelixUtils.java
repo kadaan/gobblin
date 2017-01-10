@@ -40,7 +40,7 @@ public class HelixUtils {
    */
   public static void createGobblinHelixCluster(String zkConnectionString, String clusterName) {
     ClusterSetup clusterSetup = new ClusterSetup(zkConnectionString);
-    // Create the cluster and overwrite if it already exists
+    // Create the cluster and overwrite if it already storeExists
     clusterSetup.addCluster(clusterName, true);
     // Helix 0.6.x requires a configuration property to have the form key=value.
     String autoJoinConfig = ZKHelixManager.ALLOW_PARTICIPANT_AUTO_JOIN + "=true";

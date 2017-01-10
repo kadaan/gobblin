@@ -194,7 +194,7 @@ public class GobblinMultiTaskAttempt {
     StateStore<TaskState> taskStateStore = this.taskStateStoreOptional.get();
     for (WorkUnit workUnit : workUnits) {
       String taskId = workUnit.getProp(ConfigurationKeys.TASK_ID_KEY);
-      // Delete the task state file for the task if it already exists.
+      // Delete the task state file for the task if it already storeExists.
       // This usually happens if the task is retried upon failure.
       if (taskStateStore.exists(jobId, taskId + AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX)) {
         taskStateStore.delete(jobId, taskId + AbstractJobLauncher.TASK_STATE_STORE_TABLE_SUFFIX);

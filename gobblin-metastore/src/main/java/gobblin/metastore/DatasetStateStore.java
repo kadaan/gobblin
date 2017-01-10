@@ -21,6 +21,7 @@ import gobblin.configuration.State;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 public interface DatasetStateStore<T extends State> extends StateStore<T> {
   String DATASET_STATE_STORE_TABLE_SUFFIX = ".jst";

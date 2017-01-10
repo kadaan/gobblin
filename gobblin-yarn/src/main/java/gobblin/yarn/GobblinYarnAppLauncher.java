@@ -110,7 +110,7 @@ import gobblin.yarn.event.GetApplicationReportFailureEvent;
  * <p>
  *   This class, upon starting, will check if there's a Yarn application that it has previously submitted and
  *   it is able to reconnect to. More specifically, it checks if an application with the same application name
- *   exists and can be reconnected to, i.e., if the application has not completed yet. If so, it simply starts
+ *   storeExists and can be reconnected to, i.e., if the application has not completed yet. If so, it simply starts
  *   monitoring that application.
  * </p>
  *

@@ -20,6 +20,7 @@ package gobblin.runtime;
 import java.io.IOException;
 import java.util.Map;
 
+import gobblin.metastore.util.StateStoreTableInfo;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -54,7 +55,8 @@ public class FsDatasetStateStoreTest {
   @BeforeClass
   public void setUp() throws IOException {
     this.fsJobStateStore = new FsStateStore<>(ConfigurationKeys.LOCAL_FS_URI,
-        FsDatasetStateStoreTest.class.getSimpleName(), JobState.class);
+        FsDatasetStateStoreTest.class.getSimpleName(), JobState.class,
+        FsDatasetStateStore.DATASET_STATE_STORE_TABLE_SUFFIX);
     this.fsDatasetStateStore =
         new FsDatasetStateStore(ConfigurationKeys.LOCAL_FS_URI, FsDatasetStateStoreTest.class.getSimpleName());
 
@@ -81,16 +83,13 @@ public class FsDatasetStateStoreTest {
       jobState.addTaskState(taskState);
     }
 
-    this.fsJobStateStore.put(TEST_JOB_NAME,
-        FsDatasetStateStore.CURRENT_DATASET_STATE_FILE_SUFFIX + FsDatasetStateStore.DATASET_STATE_STORE_TABLE_SUFFIX,
-        jobState);
+    this.fsJobStateStore.put(TEST_JOB_NAME, "TestJob0", jobState);
   }
 
   @Test(dependsOnMethods = "testPersistJobState")
   public void testGetJobState() throws IOException {
     JobState jobState = this.fsDatasetStateStore.get(TEST_JOB_NAME,
-        FsDatasetStateStore.CURRENT_DATASET_STATE_FILE_SUFFIX + FsDatasetStateStore.DATASET_STATE_STORE_TABLE_SUFFIX,
-        TEST_JOB_ID);
+        StateStoreTableInfo.CURRENT_NAME, TEST_JOB_ID);
 
     Assert.assertEquals(jobState.getJobName(), TEST_JOB_NAME);
     Assert.assertEquals(jobState.getJobId(), TEST_JOB_ID);

@@ -213,7 +213,7 @@ public class GobblinHelixJobLauncher extends AbstractJobLauncher {
     try {
       this.helixTaskDriver.createQueue(jobQueue);
     } catch (IllegalArgumentException iae) {
-      LOGGER.info(String.format("Job queue %s already exists", jobQueue.getName()));
+      LOGGER.info(String.format("Job queue %s already storeExists", jobQueue.getName()));
     }
 
     // Put the job into the queue

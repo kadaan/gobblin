@@ -76,7 +76,7 @@ import static gobblin.cluster.GobblinClusterConfigurationKeys.*;
  * <p>
  *   This class upon starting, will check if there is an AWS Cluster that is already running and
  *   it is able to reconnect to. More specifically, it checks if an cluster with the same cluster name
- *   exists and can be reconnected to i.e. if the cluster has not completed yet. If so, it simply starts
+ *   storeExists and can be reconnected to i.e. if the cluster has not completed yet. If so, it simply starts
  *   monitoring that cluster.
  * </p>
  *

@@ -109,7 +109,7 @@ public class LocalTaskStateTracker extends AbstractTaskStateTracker {
 
       // Cancel the task state reporter associated with this task. The reporter might
       // not be found for the given task because the task fails before the task is
-      // registered. So we need to make sure the reporter exists before calling cancel.
+      // registered. So we need to make sure the reporter storeExists before calling cancel.
       if (this.scheduledReporters.containsKey(task.getTaskId())) {
         this.scheduledReporters.remove(task.getTaskId()).cancel(false);
       }

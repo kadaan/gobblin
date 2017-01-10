@@ -46,7 +46,7 @@ public interface JobCatalog extends JobCatalogListenersContainer, Instrumentable
 
   /**
    * Get a {@link JobSpec} by uri.
-   * @throws JobSpecNotFoundException if no such JobSpec exists
+   * @throws JobSpecNotFoundException if no such JobSpec storeExists
    **/
   JobSpec getJobSpec(URI uri) throws JobSpecNotFoundException;
 

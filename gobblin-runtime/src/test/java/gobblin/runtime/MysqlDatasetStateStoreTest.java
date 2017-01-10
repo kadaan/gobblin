@@ -69,7 +69,8 @@ public class MysqlDatasetStateStoreTest {
     mySqlDs.setUsername(TEST_USER);
     mySqlDs.setPassword(TEST_PASSWORD);
 
-    dbJobStateStore = new MysqlStateStore<>(mySqlDs, TEST_STATE_STORE, false, JobState.class);
+    dbJobStateStore = new MysqlStateStore<>(mySqlDs, TEST_STATE_STORE, false, JobState.class,
+            MysqlDatasetStateStore.DATASET_STATE_STORE_TABLE_SUFFIX);
 
     props.put(ConfigurationKeys.STATE_STORE_DB_URL_KEY, jdbcUrl);
     props.put(ConfigurationKeys.STATE_STORE_DB_USER_KEY, TEST_USER);
@@ -106,9 +107,7 @@ public class MysqlDatasetStateStoreTest {
       jobState.addTaskState(taskState);
     }
 
-    dbJobStateStore.put(TEST_JOB_NAME,
-        MysqlDatasetStateStore.CURRENT_DATASET_STATE_FILE_SUFFIX + MysqlDatasetStateStore.DATASET_STATE_STORE_TABLE_SUFFIX,
-        jobState);
+    dbJobStateStore.put(TEST_JOB_NAME, "TestJob0", jobState);
   }
 
   @Test(dependsOnMethods = "testPersistJobState")

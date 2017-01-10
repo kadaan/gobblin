@@ -100,7 +100,7 @@ public class FsCommitSequenceStore implements CommitSequenceStore {
   public void put(String jobName, String datasetUrn, CommitSequence commitSequence) throws IOException {
     datasetUrn = sanitizeDatasetUrn(datasetUrn);
     if (exists(jobName, datasetUrn)) {
-      throw new IOException(String.format("CommitSequence already exists for job %s, dataset %s", jobName, datasetUrn));
+      throw new IOException(String.format("CommitSequence already storeExists for job %s, dataset %s", jobName, datasetUrn));
     }
 
     Path jobPath = new Path(this.rootPath, jobName);
