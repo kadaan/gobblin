@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -70,7 +71,6 @@ import gobblin.util.JobId;
 import gobblin.util.JobLauncherUtils;
 import gobblin.util.executors.IteratorExecutor;
 
-import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -92,7 +92,6 @@ public class JobContext implements Closeable {
   private final JobState jobState;
   @Getter(AccessLevel.PACKAGE)
   private final JobCommitPolicy jobCommitPolicy;
-  private final boolean jobLockEnabled;
   private final Optional<JobMetrics> jobMetricsOptional;
   private final Source<?, ?> source;
 
@@ -133,9 +132,6 @@ public class JobContext implements Closeable {
 
     this.jobBroker = instanceBroker.newSubscopedBuilder(new JobScopeInstance(this.jobName, this.jobId.toString())).build();
     this.jobCommitPolicy = JobCommitPolicy.getCommitPolicy(jobProps);
-
-    this.jobLockEnabled =
-        Boolean.valueOf(jobProps.getProperty(ConfigurationKeys.JOB_LOCK_ENABLED_KEY, Boolean.TRUE.toString()));
 
     this.datasetStateStore = createStateStore(jobProps);
     this.jobHistoryStoreOptional = createJobHistoryStore(jobProps);
@@ -283,15 +279,6 @@ public class JobContext implements Closeable {
    */
   Source<?, ?> getSource() {
     return this.source;
-  }
-
-  /**
-   * Check whether the use of job lock is enabled or not.
-   *
-   * @return {@code true} if the use of job lock is enabled or {@code false} otherwise
-   */
-  boolean isJobLockEnabled() {
-    return this.jobLockEnabled;
   }
 
   protected void setTaskStagingAndOutputDirs() {

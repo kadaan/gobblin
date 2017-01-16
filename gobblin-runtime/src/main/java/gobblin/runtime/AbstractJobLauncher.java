@@ -25,8 +25,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.annotation.Nullable;
 
-import gobblin.util.TaskId;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,9 +76,8 @@ import gobblin.util.ClusterNameTags;
 import gobblin.util.ExecutorsUtils;
 import gobblin.util.JobLauncherUtils;
 import gobblin.util.ParallelRunner;
+import gobblin.util.TaskId;
 import gobblin.writer.initializer.WriterInitializerFactory;
-
-import javax.annotation.Nullable;
 
 
 /**
@@ -153,36 +152,41 @@ public abstract class AbstractJobLauncher implements JobLauncher {
     this.jobProps = new Properties();
     this.jobProps.putAll(jobProps);
 
-    if (instanceBroker == null) {
-      instanceBroker = createDefaultInstanceBroker(jobProps);
+    if (!tryLockJob(this.jobProps)) {
+      throw new JobException(String.format(
+          "Previous instance of job %s is still running, skipping this scheduled run",
+          this.jobProps .getProperty(ConfigurationKeys.JOB_NAME_KEY)));
     }
 
-    this.jobContext = new JobContext(this.jobProps, LOG, instanceBroker);
-    this.eventBus.register(this.jobContext);
+    try {
+      if (instanceBroker == null) {
+        instanceBroker = createDefaultInstanceBroker(jobProps);
+      }
 
-    this.cancellationExecutor = Executors.newSingleThreadExecutor(
-        ExecutorsUtils.newThreadFactory(Optional.of(LOG), Optional.of("CancellationExecutor")));
+      this.jobContext = new JobContext(this.jobProps, LOG, instanceBroker);
+      this.eventBus.register(this.jobContext);
 
-    this.runtimeMetricContext =
-        this.jobContext.getJobMetricsOptional().transform(new Function<JobMetrics, MetricContext>() {
-          @Override
-          public MetricContext apply(JobMetrics input) {
-            return input.getMetricContext();
-          }
-        });
+      this.cancellationExecutor = Executors.newSingleThreadExecutor(
+          ExecutorsUtils.newThreadFactory(Optional.of(LOG), Optional.of("CancellationExecutor")));
 
-    this.eventSubmitter = buildEventSubmitter(metadataTags);
+      this.runtimeMetricContext =
+          this.jobContext.getJobMetricsOptional().transform(new Function<JobMetrics, MetricContext>() {
+            @Override
+            public MetricContext apply(JobMetrics input) {
+              return input.getMetricContext();
+            }
+          });
 
-    // Add all custom tags to the JobState so that tags are added to any new TaskState created
-    GobblinMetrics.addCustomTagToState(this.jobContext.getJobState(), metadataTags);
+      this.eventSubmitter = buildEventSubmitter(metadataTags);
 
-    JobExecutionEventSubmitter jobExecutionEventSubmitter = new JobExecutionEventSubmitter(this.eventSubmitter);
-    this.mandatoryJobListeners.add(new JobExecutionEventSubmitterListener(jobExecutionEventSubmitter));
+      // Add all custom tags to the JobState so that tags are added to any new TaskState created
+      GobblinMetrics.addCustomTagToState(this.jobContext.getJobState(), metadataTags);
 
-    if (!tryLockJob(this.jobProps)) {
-      this.eventSubmitter.submit(JobEvent.LOCK_IN_USE);
-      throw new JobException(String.format("Previous instance of job %s is still running, skipping this scheduled run",
-          this.jobContext.getJobName()));
+      JobExecutionEventSubmitter jobExecutionEventSubmitter = new JobExecutionEventSubmitter(this.eventSubmitter);
+      this.mandatoryJobListeners.add(new JobExecutionEventSubmitterListener(jobExecutionEventSubmitter));
+    } catch (Exception e) {
+      unlockJob();
+      throw e;
     }
   }
 
@@ -298,9 +302,9 @@ public abstract class AbstractJobLauncher implements JobLauncher {
 
   @Override
   public void launchJob(JobListener jobListener)
-      throws JobException {
-    String jobId = this.jobContext.getJobId();
+          throws JobException {
     MDC.put(ConfigurationKeys.JOB_KEY_KEY, this.jobContext.getJobKey());
+    String jobId = this.jobContext.getJobId();
     JobState jobState = this.jobContext.getJobState();
 
     try {
@@ -310,7 +314,7 @@ public abstract class AbstractJobLauncher implements JobLauncher {
         notifyListeners(this.jobContext, jobListener, TimingEvent.LauncherTimings.JOB_PREPARE, new JobListenerAction() {
           @Override
           public void apply(JobListener jobListener, JobContext jobContext)
-              throws Exception {
+                  throws Exception {
             jobListener.onJobPrepare(jobContext);
           }
         });
@@ -323,7 +327,7 @@ public abstract class AbstractJobLauncher implements JobLauncher {
         }
 
         TimingEvent workUnitsCreationTimer =
-            this.eventSubmitter.getTimingEvent(TimingEvent.LauncherTimings.WORK_UNITS_CREATION);
+                this.eventSubmitter.getTimingEvent(TimingEvent.LauncherTimings.WORK_UNITS_CREATION);
         // Generate work units of the job from the source
         Optional<List<WorkUnit>> workUnits = Optional.fromNullable(this.jobContext.getSource().getWorkunits(jobState));
         workUnitsCreationTimer.stop();
@@ -341,13 +345,13 @@ public abstract class AbstractJobLauncher implements JobLauncher {
           LOG.warn("No work units have been created for job " + jobId);
           jobState.setState(JobState.RunningState.COMMITTED);
           notifyListeners(this.jobContext, jobListener, TimingEvent.LauncherTimings.JOB_COMPLETE,
-              new JobListenerAction() {
-                @Override
-                public void apply(JobListener jobListener, JobContext jobContext)
-                    throws Exception {
-                  jobListener.onJobCompletion(jobContext);
-                }
-              });
+                  new JobListenerAction() {
+                    @Override
+                    public void apply(JobListener jobListener, JobContext jobContext)
+                            throws Exception {
+                      jobListener.onJobCompletion(jobContext);
+                    }
+                  });
           return;
         }
 
@@ -356,7 +360,7 @@ public abstract class AbstractJobLauncher implements JobLauncher {
         closer.register(ConverterInitializerFactory.newInstance(jobState, workUnits.get())).initialize();
 
         TimingEvent stagingDataCleanTimer =
-            this.eventSubmitter.getTimingEvent(TimingEvent.RunJobTimings.MR_STAGING_DATA_CLEAN);
+                this.eventSubmitter.getTimingEvent(TimingEvent.RunJobTimings.MR_STAGING_DATA_CLEAN);
         // Cleanup left-over staging data possibly from the previous run. This is particularly
         // important if the current batch of WorkUnits include failed WorkUnits from the previous
         // run which may still have left-over staging data not cleaned up yet.
@@ -373,13 +377,13 @@ public abstract class AbstractJobLauncher implements JobLauncher {
           notifyListeners(this.jobContext, jobListener, TimingEvent.LauncherTimings.JOB_START, new JobListenerAction() {
             @Override
             public void apply(JobListener jobListener, JobContext jobContext)
-                throws Exception {
+                    throws Exception {
               jobListener.onJobStart(jobContext);
             }
           });
 
           TimingEvent workUnitsPreparationTimer =
-              this.eventSubmitter.getTimingEvent(TimingEvent.LauncherTimings.WORK_UNITS_PREPARATION);
+                  this.eventSubmitter.getTimingEvent(TimingEvent.LauncherTimings.WORK_UNITS_PREPARATION);
           prepareWorkUnits(JobLauncherUtils.flattenWorkUnits(workUnits.get()), jobState);
           workUnitsPreparationTimer.stop();
 
@@ -394,7 +398,7 @@ public abstract class AbstractJobLauncher implements JobLauncher {
           jobRunTimer.stop();
 
           this.eventSubmitter
-              .submit(CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, "JOB_" + jobState.getState()));
+                  .submit(CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.UPPER_CAMEL, "JOB_" + jobState.getState()));
 
           // Check and set final job jobPropsState upon job completion
           if (jobState.getState() == JobState.RunningState.CANCELLED) {
@@ -424,12 +428,11 @@ public abstract class AbstractJobLauncher implements JobLauncher {
 
           // Write job execution info to the job history store upon job termination
           this.jobContext.storeJobExecutionInfo();
-        } finally {
-          unlockJob();
+        }
+        finally {
+          launchJobTimer.stop();
         }
       }
-
-      launchJobTimer.stop();
 
       for (JobState.DatasetState datasetState : this.jobContext.getDatasetStatesByUrns().values()) {
         // Set the overall job state to FAILED if the job failed to process any dataset
@@ -442,7 +445,7 @@ public abstract class AbstractJobLauncher implements JobLauncher {
       notifyListeners(this.jobContext, jobListener, TimingEvent.LauncherTimings.JOB_COMPLETE, new JobListenerAction() {
         @Override
         public void apply(JobListener jobListener, JobContext jobContext)
-            throws Exception {
+                throws Exception {
           jobListener.onJobCompletion(jobContext);
         }
       });
@@ -451,7 +454,7 @@ public abstract class AbstractJobLauncher implements JobLauncher {
         notifyListeners(this.jobContext, jobListener, TimingEvent.LauncherTimings.JOB_FAILED, new JobListenerAction() {
           @Override
           public void apply(JobListener jobListener, JobContext jobContext)
-              throws Exception {
+                  throws Exception {
             jobListener.onJobFailure(jobContext);
           }
         });
@@ -502,13 +505,17 @@ public abstract class AbstractJobLauncher implements JobLauncher {
   @Override
   public void close()
       throws IOException {
-    this.cancellationExecutor.shutdownNow();
     try {
-      this.jobContext.getSource().shutdown(this.jobContext.getJobState());
-    } finally {
-      if (GobblinMetrics.isEnabled(this.jobProps)) {
-        GobblinMetricsRegistry.getInstance().remove(this.jobContext.getJobId());
+      this.cancellationExecutor.shutdownNow();
+      try {
+        this.jobContext.getSource().shutdown(this.jobContext.getJobState());
+      } finally {
+        if (GobblinMetrics.isEnabled(this.jobProps)) {
+          GobblinMetricsRegistry.getInstance().remove(this.jobContext.getJobId());
+        }
       }
+    } finally {
+        unlockJob();
     }
   }
 
@@ -611,7 +618,7 @@ public abstract class AbstractJobLauncher implements JobLauncher {
    */
   private boolean tryLockJob(Properties properties) {
     try {
-      if (this.jobContext.isJobLockEnabled()) {
+      if (Boolean.valueOf(jobProps.getProperty(ConfigurationKeys.JOB_LOCK_ENABLED_KEY, Boolean.TRUE.toString()))) {
         this.jobLockOptional = Optional.of(getJobLock(properties, new JobLockEventListener() {
           @Override
           public void onLost() {
@@ -621,12 +628,13 @@ public abstract class AbstractJobLauncher implements JobLauncher {
       }
       return !this.jobLockOptional.isPresent() || this.jobLockOptional.get().tryLock();
     } catch (JobLockException ioe) {
-      LOG.error(String.format("Failed to acquire job lock for job %s: %s", this.jobContext.getJobId(), ioe), ioe);
+      LOG.error(String.format("Failed to acquire job lock for job %s: %s",
+          this.jobProps.getProperty(ConfigurationKeys.JOB_ID_KEY), ioe), ioe);
       return false;
     }
   }
 
-  /**
+    /**
    * Unlock a completed or failed job.
    */
   private void unlockJob() {
@@ -635,12 +643,16 @@ public abstract class AbstractJobLauncher implements JobLauncher {
         // Unlock so the next run of the same job can proceed
         this.jobLockOptional.get().unlock();
       } catch (JobLockException ioe) {
-        LOG.error(String.format("Failed to unlock for job %s: %s", this.jobContext.getJobId(), ioe), ioe);
+        LOG.error(String.format("Failed to unlock for job %s: %s",
+            this.jobProps.getProperty(ConfigurationKeys.JOB_ID_KEY), ioe), ioe);
       } finally {
         try {
           this.jobLockOptional.get().close();
         } catch (IOException e) {
-          LOG.error(String.format("Failed to close job lock for job %s: %s", this.jobContext.getJobId(), e), e);
+          LOG.error(String.format("Failed to close job lock for job %s: %s",
+              this.jobProps.getProperty(ConfigurationKeys.JOB_ID_KEY), e), e);
+        } finally {
+          this.jobLockOptional = Optional.absent();
         }
       }
     }
