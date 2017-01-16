@@ -66,6 +66,7 @@ import gobblin.util.ClassAliasResolver;
 import gobblin.util.Either;
 import gobblin.util.ExecutorsUtils;
 import gobblin.util.HadoopUtils;
+import gobblin.util.JobId;
 import gobblin.util.JobLauncherUtils;
 import gobblin.util.executors.IteratorExecutor;
 
@@ -87,7 +88,7 @@ public class JobContext implements Closeable {
   private static final String TASK_OUTPUT_DIR_NAME = "task-output";
 
   private final String jobName;
-  private final String jobId;
+  private final JobId jobId;
   private final JobState jobState;
   @Getter(AccessLevel.PACKAGE)
   private final JobCommitPolicy jobCommitPolicy;
@@ -125,11 +126,12 @@ public class JobContext implements Closeable {
         "A job must have a job name specified by job.name");
 
     this.jobName = JobState.getJobNameFromProps(jobProps);
-    this.jobId = jobProps.containsKey(ConfigurationKeys.JOB_ID_KEY) ? jobProps.getProperty(ConfigurationKeys.JOB_ID_KEY)
-        : JobLauncherUtils.newJobId(this.jobName);
-    jobProps.setProperty(ConfigurationKeys.JOB_ID_KEY, this.jobId);
+    this.jobId = jobProps.containsKey(ConfigurationKeys.JOB_ID_KEY) ?
+            JobId.parse(jobProps.getProperty(ConfigurationKeys.JOB_ID_KEY)) :
+            JobLauncherUtils.newJobId(this.jobName);
+    jobProps.setProperty(ConfigurationKeys.JOB_ID_KEY, this.jobId.toString());
 
-    this.jobBroker = instanceBroker.newSubscopedBuilder(new JobScopeInstance(this.jobName, this.jobId)).build();
+    this.jobBroker = instanceBroker.newSubscopedBuilder(new JobScopeInstance(this.jobName, this.jobId.toString())).build();
     this.jobCommitPolicy = JobCommitPolicy.getCommitPolicy(jobProps);
 
     this.jobLockEnabled =
@@ -141,7 +143,7 @@ public class JobContext implements Closeable {
     State jobPropsState = new State();
     jobPropsState.addAll(jobProps);
     this.jobState = new JobState(jobPropsState, this.datasetStateStore.getLatestDatasetStatesByUrns(this.jobName),
-        this.jobName, this.jobId);
+        this.jobName, this.jobId.toString());
 
     setTaskStagingAndOutputDirs();
 
@@ -225,7 +227,7 @@ public class JobContext implements Closeable {
       throws ClassNotFoundException, InstantiationException, IllegalAccessException {
     return new SourceDecorator<>(
         Source.class.cast(Class.forName(jobProps.getProperty(ConfigurationKeys.SOURCE_CLASS_KEY)).newInstance()),
-        this.jobId, logger);
+        this.jobId.toString(), logger);
   }
 
   /**
@@ -243,7 +245,17 @@ public class JobContext implements Closeable {
    * @return job ID
    */
   public String getJobId() {
-    return this.jobId;
+    return this.jobId.toString();
+  }
+
+
+  /**
+   * Get the job key.
+   *
+   * @return job key
+   */
+  public String getJobKey() {
+    return this.jobId.getSequence();
   }
 
   /**
@@ -287,7 +299,7 @@ public class JobContext implements Closeable {
 
       // Add jobId to task data root dir
       String taskDataRootDirWithJobId =
-          new Path(this.jobState.getProp(ConfigurationKeys.TASK_DATA_ROOT_DIR_KEY), this.jobId).toString();
+          new Path(this.jobState.getProp(ConfigurationKeys.TASK_DATA_ROOT_DIR_KEY), this.jobId.toString()).toString();
       this.jobState.setProp(ConfigurationKeys.TASK_DATA_ROOT_DIR_KEY, taskDataRootDirWithJobId);
 
       setTaskStagingDir();

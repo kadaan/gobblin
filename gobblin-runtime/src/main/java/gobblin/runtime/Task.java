@@ -33,6 +33,7 @@ import gobblin.runtime.fork.Fork;
 import gobblin.runtime.fork.SynchronousFork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -105,6 +106,7 @@ public class Task implements Runnable {
 
   private final String jobId;
   private final String taskId;
+  private final String taskKey;
   private final TaskContext taskContext;
   private final TaskState taskState;
   private final TaskStateTracker taskStateTracker;
@@ -144,6 +146,7 @@ public class Task implements Runnable {
     this.taskState = context.getTaskState();
     this.jobId = this.taskState.getJobId();
     this.taskId = this.taskState.getTaskId();
+    this.taskKey = this.taskState.getTaskKey();
     this.taskStateTracker = taskStateTracker;
     this.taskExecutor = taskExecutor;
     this.countDownLatch = countDownLatch;
@@ -227,6 +230,7 @@ public class Task implements Runnable {
   @Override
   @SuppressWarnings("unchecked")
   public void run() {
+    MDC.put(ConfigurationKeys.TASK_KEY_KEY, this.taskKey);
     this.startTime = System.currentTimeMillis();
     this.taskState.setStartTime(startTime);
     this.taskState.setWorkingState(WorkUnitState.WorkingState.RUNNING);
@@ -476,6 +480,15 @@ public class Task implements Runnable {
    */
   public String getTaskId() {
     return this.taskId;
+  }
+
+  /**
+   * Get the key of this task.
+   *
+   * @return Key of this task
+   */
+  public String getTaskKey() {
+    return this.taskKey;
   }
 
   /**

@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
+import gobblin.util.JobId;
+import gobblin.util.TaskId;
 import org.apache.avro.Schema;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.generic.GenericDatumReader;
@@ -55,8 +57,10 @@ public class TestHelper {
   public static final String TEST_TASK_RUNNER_ID = "1";
 
   public static final String TEST_JOB_NAME = "TestJob";
-  public static final String TEST_JOB_ID = JobLauncherUtils.newJobId(TEST_JOB_NAME);
-  public static final String TEST_TASK_ID = JobLauncherUtils.newTaskId(TEST_JOB_ID, 0);
+  static final JobId TEST_JOB_ID = JobLauncherUtils.newJobId(TEST_JOB_NAME);
+  public static final int TEST_TASK_KEY = 0;
+  public static final TaskId TEST_TASK_ID = JobLauncherUtils.newTaskId(TEST_JOB_ID, TEST_TASK_KEY);
+
 
   public static final String SOURCE_SCHEMA =
       "{\"namespace\":\"example.avro\", \"type\":\"record\", \"name\":\"User\", "

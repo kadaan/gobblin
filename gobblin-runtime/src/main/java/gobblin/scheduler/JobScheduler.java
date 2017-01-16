@@ -48,6 +48,7 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -66,6 +67,7 @@ import gobblin.runtime.listeners.EmailNotificationJobListener;
 import gobblin.runtime.listeners.JobListener;
 import gobblin.runtime.listeners.RunOnceJobListener;
 import gobblin.util.ExecutorsUtils;
+import gobblin.util.JobId;
 import gobblin.util.JobLauncherUtils;
 import gobblin.util.SchedulerUtils;
 import gobblin.util.filesystem.PathAlterationListener;
@@ -367,11 +369,9 @@ public class JobScheduler extends AbstractIdleService {
       return;
     }
 
-    // Populate the assigned job ID
-    jobProps.setProperty(ConfigurationKeys.JOB_ID_KEY, JobLauncherUtils.newJobId(jobName));
-
     // Launch the job
     try (Closer closer = Closer.create()) {
+      closer.register(MDC.putCloseable(ConfigurationKeys.JOB_NAME_KEY, jobName));
       closer.register(jobLauncher).launchJob(jobListener);
       boolean runOnce = Boolean.valueOf(jobProps.getProperty(ConfigurationKeys.JOB_RUN_ONCE_KEY, "false"));
       if (runOnce && this.scheduledJobs.containsKey(jobName)) {
@@ -459,10 +459,9 @@ public class JobScheduler extends AbstractIdleService {
    * A Gobblin job to be scheduled.
    */
   @DisallowConcurrentExecution
-  public static class GobblinJob implements Job {
-
+  public static class GobblinJob extends BaseGobblinJob {
     @Override
-    public void execute(JobExecutionContext context)
+    public void executeImpl(JobExecutionContext context)
         throws JobExecutionException {
       LOG.info("Starting job " + context.getJobDetail().getKey());
       JobDataMap dataMap = context.getJobDetail().getJobDataMap();

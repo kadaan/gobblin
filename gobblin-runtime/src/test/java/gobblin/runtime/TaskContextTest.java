@@ -66,7 +66,7 @@ public class TaskContextTest {
     workUnit.addAll(properties);
     workUnit.setProp(ConfigurationKeys.JOB_ID_KEY, JobLauncherUtils.newJobId("GobblinTest1"));
     workUnit.setProp(ConfigurationKeys.TASK_ID_KEY,
-        JobLauncherUtils.newTaskId(workUnit.getProp(ConfigurationKeys.JOB_ID_KEY), 0));
+        JobLauncherUtils.newTaskId(workUnit.getProp(ConfigurationKeys.JOB_ID_KEY), 0).toString());
     this.taskContext = new TaskContext(new WorkUnitState(workUnit));
   }
 

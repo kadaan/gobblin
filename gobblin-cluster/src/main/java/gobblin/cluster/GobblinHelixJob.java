@@ -32,6 +32,7 @@ import gobblin.annotation.Alpha;
 import gobblin.metrics.Tag;
 import gobblin.runtime.JobLauncher;
 import gobblin.runtime.listeners.JobListener;
+import gobblin.scheduler.BaseGobblinJob;
 import gobblin.scheduler.JobScheduler;
 
 
@@ -42,10 +43,9 @@ import gobblin.scheduler.JobScheduler;
  * @author Yinan Li
  */
 @Alpha
-public class GobblinHelixJob implements Job {
-
+public class GobblinHelixJob extends BaseGobblinJob {
   @Override
-  public void execute(JobExecutionContext context) throws JobExecutionException {
+  public void executeImpl(JobExecutionContext context) throws JobExecutionException {
     JobDataMap dataMap = context.getJobDetail().getJobDataMap();
 
     JobScheduler jobScheduler = (JobScheduler) dataMap.get(JobScheduler.JOB_SCHEDULER_KEY);
