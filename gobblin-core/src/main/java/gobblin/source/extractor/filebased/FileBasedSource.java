@@ -23,7 +23,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
+import com.google.common.collect.Sets;
 import gobblin.source.extractor.extract.AbstractSource;
 
 import org.apache.commons.lang3.StringUtils;
@@ -100,15 +102,23 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
     TableType tableType = TableType.valueOf(state.getProp(ConfigurationKeys.EXTRACT_TABLE_TYPE_KEY).toUpperCase());
     SourceState previousSourceState = state.getPreviousSourceState();
 
-    List<String> prevFsSnapshot = Lists.newArrayList();
+    Set<String> prevFsSnapshot = Sets.newHashSet();
 
     // Get list of files seen in the previous run
     if (previousSourceState != null) {
       state.setProp(ConfigurationKeys.PREVIOUS_STATE_ID_KEY,
           previousSourceState.getProp(ConfigurationKeys.DATASET_STATE_ID_KEY, ConfigurationKeys.DEFAULT_DATASET_STATE_ID));
       if (previousSourceState.contains(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT)) {
-        prevFsSnapshot = previousSourceState.getPropAsList(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
+        prevFsSnapshot = previousSourceState.getPropAsSet(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
       }
+    }
+
+    List<WorkUnit> workUnits = Lists.newArrayList();
+    List<WorkUnit> previousWorkUnits = this.getPreviousWorkUnitsForRetry(state);
+    log.info("Total number of work units from the previous failed runs: " + previousWorkUnits.size());
+    for (WorkUnit previousWorkUnit : previousWorkUnits) {
+      prevFsSnapshot.addAll(previousWorkUnit.getPropAsSet(ConfigurationKeys.SOURCE_FILEBASED_FILES_TO_PULL));
+      workUnits.add(previousWorkUnit);
     }
 
     // Get list of files that need to be pulled
@@ -122,7 +132,6 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
       filesToPull.add(filesWithoutTimeToPull[0]);
     }
 
-    List<WorkUnit> workUnits = Lists.newArrayList();
     if (!filesToPull.isEmpty()) {
 
       logFilesToPull(filesToPull);
@@ -167,13 +176,9 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
       // As a short term workaround, assign this to the state after all of the workunits are created.
       state.setProp(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT, StringUtils.join(currentFsSnapshot, ","));
 
-      log.info("Total number of work units for the current run: " + workUnitCount);
+        log.info("Total number of work units for the current run: " + (workUnits.size() - previousWorkUnits.size()));
     }
 
-    List<WorkUnit> previousWorkUnits = this.getPreviousWorkUnitsForRetry(state);
-    log.info("Total number of work units from the previous failed runs: " + previousWorkUnits.size());
-
-    workUnits.addAll(previousWorkUnits);
     return workUnits;
   }
 
