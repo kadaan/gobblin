@@ -23,8 +23,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-
-import gobblin.source.extractor.extract.AbstractSource;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -34,11 +33,13 @@ import org.slf4j.MDC;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import gobblin.configuration.ConfigurationKeys;
 import gobblin.configuration.SourceState;
 import gobblin.configuration.State;
 import gobblin.configuration.WorkUnitState;
+import gobblin.source.extractor.extract.AbstractSource;
 import gobblin.source.workunit.Extract;
 import gobblin.source.workunit.WorkUnit;
 import gobblin.source.workunit.Extract.TableType;
@@ -100,15 +101,24 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
 
     TableType tableType = TableType.valueOf(state.getProp(ConfigurationKeys.EXTRACT_TABLE_TYPE_KEY).toUpperCase());
     List<WorkUnitState> previousWorkunits = Lists.newArrayList(state.getPreviousWorkUnitStates());
-    List<String> prevFsSnapshot = Lists.newArrayList();
+	Set<String> prevFsSnapshot = Sets.newHashSet();
 
     // Get list of files seen in the previous run
-    if (previousWorkunits != null) {
+    if (!previousWorkunits.isEmpty()) {
       state.setProp(ConfigurationKeys.PREVIOUS_STATE_ID_KEY,
-              previousWorkunits.get(0).getProp(ConfigurationKeys.DATASET_STATE_ID_KEY, ConfigurationKeys.DEFAULT_DATASET_STATE_ID));
+          previousWorkunits.get(0).getProp(ConfigurationKeys.DATASET_STATE_ID_KEY,
+              ConfigurationKeys.DEFAULT_DATASET_STATE_ID));
       if (previousWorkunits.get(0).contains(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT)) {
-        prevFsSnapshot = previousWorkunits.get(0).getPropAsList(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
+        prevFsSnapshot = previousWorkunits.get(0).getPropAsSet(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
       }
+    }
+
+    List<WorkUnit> workUnits = Lists.newArrayList();
+    List<WorkUnit> previousWorkUnitsForRetry = this.getPreviousWorkUnitsForRetry(state);
+    log.info("Total number of work units from the previous failed runs: " + previousWorkUnitsForRetry.size());
+    for (WorkUnit previousWorkUnitForRetry : previousWorkUnitsForRetry) {
+      prevFsSnapshot.addAll(previousWorkUnitForRetry.getPropAsSet(ConfigurationKeys.SOURCE_FILEBASED_FILES_TO_PULL));
+      workUnits.add(previousWorkUnitForRetry);
     }
 
     // Get list of files that need to be pulled
@@ -122,11 +132,10 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
       filesToPull.add(filesWithoutTimeToPull[0]);
     }
 
-    List<WorkUnit> workUnits = Lists.newArrayList();
     if (!filesToPull.isEmpty()) {
-      log.info("Will pull the following files in this run: " + Arrays.toString(filesToPull.toArray()));
+      logFilesToPull(filesToPull);
 
-      int numPartitions = state.contains((ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS))
+      int numPartitions = state.contains(ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS)
           && state.getPropAsInt(ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS) <= filesToPull.size()
               ? state.getPropAsInt(ConfigurationKeys.SOURCE_MAX_NUMBER_OF_PARTITIONS) : filesToPull.size();
       if (numPartitions <= 0) {
@@ -135,8 +144,6 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
 
       int filesPerPartition = filesToPull.size() % numPartitions == 0 ? filesToPull.size() / numPartitions
           : filesToPull.size() / numPartitions + 1;
-
-      int workUnitCount = 0;
 
       // Distribute the files across the workunits
       for (int fileOffset = 0; fileOffset < filesToPull.size(); fileOffset += filesPerPartition) {
@@ -162,16 +169,11 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
         // Use extract table name to create extract
         Extract extract = partitionState.createExtract(tableType, nameSpaceName, extractTableName);
         workUnits.add(partitionState.createWorkUnit(extract));
-        workUnitCount++;
       }
 
-      log.info("Total number of work units for the current run: " + workUnitCount);
+      log.info("Total number of work units for the current run: " + (workUnits.size() - previousWorkUnitsForRetry.size()));
     }
 
-    List<WorkUnit> previousWorkUnits = this.getPreviousWorkUnitsForRetry(state);
-    log.info("Total number of work units from the previous failed runs: " + previousWorkUnits.size());
-
-    workUnits.addAll(previousWorkUnits);
     return workUnits;
   }
 
@@ -215,4 +217,14 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
   }
 
   public abstract void initFileSystemHelper(State state) throws FileBasedHelperException;
+
+  private void logFilesToPull(List<String> filesToPull) {
+    int filesToLog = Math.min(2000, filesToPull.size());
+    String remainingString = "";
+    if (filesToLog < filesToPull.size()) {
+      remainingString = "and " + (filesToPull.size() - filesToLog) + " more ";
+    }
+    log.info(String.format("Will pull the following files %s in this run: %s", remainingString,
+            Arrays.toString(filesToPull.subList(0, filesToLog).toArray())));
+  }
 }
