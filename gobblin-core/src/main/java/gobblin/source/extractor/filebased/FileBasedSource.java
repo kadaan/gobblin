@@ -103,10 +103,12 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
     List<String> prevFsSnapshot = Lists.newArrayList();
 
     // Get list of files seen in the previous run
-    if (!previousWorkunits.isEmpty()
-        && previousWorkunits.get(0).getWorkunit().contains(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT)) {
-      prevFsSnapshot =
-          previousWorkunits.get(0).getWorkunit().getPropAsList(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
+    if (previousWorkunits != null) {
+      state.setProp(ConfigurationKeys.PREVIOUS_STATE_ID_KEY,
+              previousWorkunits.get(0).getProp(ConfigurationKeys.DATASET_STATE_ID_KEY, ConfigurationKeys.DEFAULT_DATASET_STATE_ID));
+      if (previousWorkunits.get(0).contains(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT)) {
+        prevFsSnapshot = previousWorkunits.get(0).getPropAsList(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
+      }
     }
 
     // Get list of files that need to be pulled
