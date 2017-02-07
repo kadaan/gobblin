@@ -58,11 +58,8 @@ public class JobLauncherUtils {
    * @param jobName job name
    * @return new job ID
    */
-  public static String newJobId(String jobName) {
-    // Job ID in the form of job_<job_id_suffix>
-    // <job_id_suffix> is in the form of <job_name>_<current_timestamp>
-    String jobId = String.format("job_%s_%d", jobName, System.currentTimeMillis());
-    return jobId;
+  public static JobId newJobId(String jobName) {
+    return JobId.create(jobName, Long.toString(System.currentTimeMillis()));
   }
 
   /**
@@ -72,8 +69,19 @@ public class JobLauncherUtils {
    * @param sequence task sequence number
    * @return new task ID
    */
-  public static String newTaskId(String jobId, int sequence) {
-    return String.format("task_%s_%d", jobId.substring(jobId.indexOf('_') + 1), sequence);
+  public static TaskId newTaskId(String jobId, int sequence) {
+    return newTaskId(JobId.parse(jobId), sequence);
+  }
+
+  /**
+   * Create a new task ID for the job with the given job ID.
+   *
+   * @param jobId job ID
+   * @param sequence task sequence number
+   * @return new task ID
+   */
+  public static TaskId newTaskId(JobId jobId, int sequence) {
+    return TaskId.create(jobId.getJobName(), sequence);
   }
 
   /**
@@ -84,8 +92,20 @@ public class JobLauncherUtils {
    * @param sequence multi-task sequence number
    * @return new multi-task ID
    */
-  public static String newMultiTaskId(String jobId, int sequence) {
-    return String.format("multitask_%s_%d", jobId.substring(jobId.indexOf('_') + 1), sequence);
+  public static MultiTaskId newMultiTaskId(String jobId, int sequence) {
+    return newMultiTaskId(JobId.parse(jobId), sequence);
+  }
+
+  /**
+   * Create an ID for a new multi-task (corresponding to a {@link gobblin.source.workunit.MultiWorkUnit})
+   * for the job with the given job ID.
+   *
+   * @param jobId job ID
+   * @param sequence multi-task sequence number
+   * @return new multi-task ID
+   */
+  public static MultiTaskId newMultiTaskId(JobId jobId, int sequence) {
+    return MultiTaskId.create(jobId.getJobName(), sequence);
   }
 
   /**

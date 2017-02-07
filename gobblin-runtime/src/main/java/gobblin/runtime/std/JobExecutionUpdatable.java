@@ -47,6 +47,6 @@ public class JobExecutionUpdatable implements JobExecution {
     return new JobExecutionUpdatable(jobSpec.getUri(),
         jobSpec.getVersion(),
         System.currentTimeMillis(),
-        JobLauncherUtils.newJobId(JobState.getJobNameFromProps(jobSpec.getConfigAsProperties())));
+        JobLauncherUtils.newJobId(JobState.getJobNameFromProps(jobSpec.getConfigAsProperties())).toString());
   }
 }

@@ -76,6 +76,7 @@ import gobblin.runtime.app.ApplicationLauncher;
 import gobblin.runtime.app.ServiceBasedAppLauncher;
 import gobblin.scheduler.SchedulerService;
 import gobblin.util.ConfigUtils;
+import gobblin.util.JvmUtils;
 import gobblin.util.logs.Log4jConfigurationHelper;
 import gobblin.util.reflection.GobblinConstructorUtils;
 
@@ -636,6 +637,7 @@ public class GobblinClusterManager implements ApplicationLauncher {
           GobblinClusterConfigurationKeys.GOBBLIN_CLUSTER_LOG4J_CONFIGURATION_FILE,
           GobblinClusterConfigurationKeys.GOBBLIN_CLUSTER_LOG4J_CONFIGURATION_FILE);
 
+      LOGGER.info(JvmUtils.getJvmInputArguments());
       Config config = ConfigFactory.load();
 
       if (cmd.hasOption(GobblinClusterConfigurationKeys.HELIX_INSTANCE_NAME_OPTION_NAME)) {

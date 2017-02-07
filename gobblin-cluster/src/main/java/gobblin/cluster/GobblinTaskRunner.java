@@ -78,6 +78,7 @@ import gobblin.runtime.TaskStateTracker;
 import gobblin.runtime.services.JMXReportingService;
 import gobblin.util.ConfigUtils;
 import gobblin.util.HadoopUtils;
+import gobblin.util.JvmUtils;
 import gobblin.util.logs.Log4jConfigurationHelper;
 
 
