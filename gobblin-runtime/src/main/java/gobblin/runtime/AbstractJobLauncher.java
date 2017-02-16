@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Function;
@@ -72,6 +73,7 @@ import gobblin.source.workunit.MultiWorkUnit;
 import gobblin.source.workunit.WorkUnit;
 import gobblin.util.ClusterNameTags;
 import gobblin.util.ExecutorsUtils;
+import gobblin.util.Id;
 import gobblin.util.JobLauncherUtils;
 import gobblin.util.ParallelRunner;
 import gobblin.writer.initializer.WriterInitializerFactory;
@@ -303,6 +305,7 @@ public abstract class AbstractJobLauncher implements JobLauncher {
   public void launchJob(JobListener jobListener)
       throws JobException {
     String jobId = this.jobContext.getJobId();
+    MDC.put(ConfigurationKeys.JOB_KEY_KEY, this.jobContext.getJobKey());
     JobState jobState = this.jobContext.getJobState();
 
     try {
@@ -463,6 +466,7 @@ public abstract class AbstractJobLauncher implements JobLauncher {
       if (this.jobContext.getJobMetricsOptional().isPresent()) {
         JobMetrics.remove(jobState);
       }
+      MDC.remove(ConfigurationKeys.JOB_KEY_KEY);
     }
   }
 
@@ -597,9 +601,10 @@ public abstract class AbstractJobLauncher implements JobLauncher {
     int taskIdSequence = 0;
     for (WorkUnit workUnit : workUnits) {
       workUnit.setProp(ConfigurationKeys.JOB_ID_KEY, this.jobContext.getJobId());
-      String taskId = JobLauncherUtils.newTaskId(this.jobContext.getJobId(), taskIdSequence++);
-      workUnit.setId(taskId);
-      workUnit.setProp(ConfigurationKeys.TASK_ID_KEY, taskId);
+      Id.Task taskId = JobLauncherUtils.newTaskId(this.jobContext.getJobId(), taskIdSequence++);
+      workUnit.setId(taskId.toString());
+      workUnit.setProp(ConfigurationKeys.TASK_ID_KEY, taskId.toString());
+      workUnit.setProp(ConfigurationKeys.TASK_KEY_KEY, taskId.getSequence().toString());
       jobState.incrementTaskCount();
       // Pre-add a task state so if the task fails and no task state is written out,
       // there is still task state for the task when job/task states are persisted.

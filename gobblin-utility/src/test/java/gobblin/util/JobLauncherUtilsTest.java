@@ -47,25 +47,47 @@ import gobblin.source.workunit.WorkUnit;
 public class JobLauncherUtilsTest {
 
   private static final String JOB_NAME = "foo";
-  private static final Pattern PATTERN = Pattern.compile("job_" + JOB_NAME + "_\\d+");
   private String jobId;
+  private String jobInstanceId;
+  private Pattern jobPattern;
+  private Pattern taskPattern;
+  private Pattern multitaskPattern;
 
   @Test
   public void testNewJobId() {
-    this.jobId = JobLauncherUtils.newJobId(JOB_NAME);
-    Assert.assertTrue(PATTERN.matcher(this.jobId).matches());
+    Id.Job jobId = JobLauncherUtils.newJobId(JOB_NAME);
+    Assert.assertEquals(jobId.getName(), JOB_NAME);
+    Assert.assertTrue(System.currentTimeMillis() - jobId.getSequence() < 1000);
+    this.jobId = jobId.toString();
+    this.jobInstanceId = jobId.get(Id.Parts.INSTANCE_NAME);
+    this.jobPattern = Pattern.compile("job_" + JOB_NAME + "_\\d+");
+    this.taskPattern = Pattern.compile("task_" + jobInstanceId + "_\\d+");
+    this.multitaskPattern = Pattern.compile("multitask_" + jobInstanceId + "_\\d+");
+    Assert.assertTrue(jobPattern.matcher(this.jobId).matches());
   }
 
   @Test(dependsOnMethods = "testNewJobId")
   public void testNewTaskId() {
-    Assert.assertEquals(JobLauncherUtils.newTaskId(this.jobId, 0), this.jobId.replace("job", "task") + "_0");
-    Assert.assertEquals(JobLauncherUtils.newTaskId(this.jobId, 1), this.jobId.replace("job", "task") + "_1");
+    Id.Task taskId = JobLauncherUtils.newTaskId(this.jobId, 0);
+    Assert.assertEquals(taskId.getName(), Id.Job.parse(jobId).get(Id.Parts.INSTANCE_NAME));
+    Assert.assertEquals(taskId.getSequence(), new Long(0));
+
+    taskId = JobLauncherUtils.newTaskId(this.jobId, 1);
+    Assert.assertEquals(taskId.getName(), Id.Job.parse(jobId).get(Id.Parts.INSTANCE_NAME));
+    Assert.assertEquals(taskId.getSequence(), new Long(1));
+    Assert.assertTrue(taskPattern.matcher(taskId.toString()).matches());
   }
 
   @Test(dependsOnMethods = "testNewJobId")
   public void testNewMultiTaskId() {
-    Assert.assertEquals(JobLauncherUtils.newMultiTaskId(this.jobId, 0), this.jobId.replace("job", "multitask") + "_0");
-    Assert.assertEquals(JobLauncherUtils.newMultiTaskId(this.jobId, 1), this.jobId.replace("job", "multitask") + "_1");
+    Id.MultiTask taskId = JobLauncherUtils.newMultiTaskId(this.jobId, 0);
+    Assert.assertEquals(taskId.getName(), Id.Job.parse(jobId).get(Id.Parts.INSTANCE_NAME));
+    Assert.assertEquals(taskId.getSequence(), new Long(0));
+
+    taskId = JobLauncherUtils.newMultiTaskId(this.jobId, 1);
+    Assert.assertEquals(taskId.getName(), Id.Job.parse(jobId).get(Id.Parts.INSTANCE_NAME));
+    Assert.assertEquals(taskId.getSequence(), new Long(1));
+    Assert.assertTrue(multitaskPattern.matcher(taskId.toString()).matches());
   }
 
   @Test

@@ -38,6 +38,7 @@ import com.google.common.io.Closer;
 import com.google.common.io.Files;
 
 import gobblin.configuration.ConfigurationKeys;
+import gobblin.util.Id;
 import gobblin.util.JobLauncherUtils;
 
 
@@ -55,8 +56,10 @@ public class TestHelper {
   public static final String TEST_TASK_RUNNER_ID = "1";
 
   public static final String TEST_JOB_NAME = "TestJob";
-  public static final String TEST_JOB_ID = JobLauncherUtils.newJobId(TEST_JOB_NAME);
-  public static final String TEST_TASK_ID = JobLauncherUtils.newTaskId(TEST_JOB_ID, 0);
+  static final Id.Job TEST_JOB_ID = JobLauncherUtils.newJobId(TEST_JOB_NAME);
+  public static final int TEST_TASK_KEY = 0;
+  public static final Id.Task TEST_TASK_ID = JobLauncherUtils.newTaskId(TEST_JOB_ID, TEST_TASK_KEY);
+
 
   public static final String SOURCE_SCHEMA =
       "{\"namespace\":\"example.avro\", \"type\":\"record\", \"name\":\"User\", "

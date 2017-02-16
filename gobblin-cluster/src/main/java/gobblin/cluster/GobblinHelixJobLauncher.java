@@ -202,7 +202,7 @@ public class GobblinHelixJobLauncher extends AbstractJobLauncher {
       int multiTaskIdSequence = 0;
       for (WorkUnit workUnit : workUnits) {
         if (workUnit instanceof MultiWorkUnit) {
-          workUnit.setId(JobLauncherUtils.newMultiTaskId(this.jobContext.getJobId(), multiTaskIdSequence++));
+          workUnit.setId(JobLauncherUtils.newMultiTaskId(this.jobContext.getJobId(), multiTaskIdSequence++).toString());
         }
         addWorkUnit(workUnit, stateSerDeRunner, taskConfigMap);
       }

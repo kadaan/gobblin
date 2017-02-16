@@ -29,6 +29,7 @@ import org.apache.helix.task.TaskConfig;
 import org.apache.helix.task.TaskResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -48,6 +49,7 @@ import gobblin.runtime.TaskStateTracker;
 import gobblin.runtime.util.JobMetrics;
 import gobblin.source.workunit.MultiWorkUnit;
 import gobblin.source.workunit.WorkUnit;
+import gobblin.util.Id;
 import gobblin.util.JobLauncherUtils;
 import gobblin.util.SerializationUtils;
 import gobblin.broker.gobblin_scopes.GobblinScopeTypes;
@@ -84,7 +86,9 @@ public class GobblinHelixTask implements Task {
   private final TaskConfig taskConfig;
   // An empty JobState instance that will be filled with values read from the serialized JobState
   private final JobState jobState = new JobState();
+  private final String jobName;
   private final String jobId;
+  private final String jobKey;
   private final String participantId;
 
   private final FileSystem fs;
@@ -98,7 +102,10 @@ public class GobblinHelixTask implements Task {
     this.taskStateTracker = taskStateTracker;
 
     this.taskConfig = taskCallbackContext.getTaskConfig();
-    this.jobId = this.taskConfig.getConfigMap().get(ConfigurationKeys.JOB_ID_KEY);
+    this.jobName = this.taskConfig.getConfigMap().get(ConfigurationKeys.JOB_NAME_KEY);
+    Id.Job jobId = Id.Job.parse(this.taskConfig.getConfigMap().get(ConfigurationKeys.JOB_ID_KEY));
+    this.jobId = jobId.toString();
+    this.jobKey = jobId.getSequence().toString();
     this.participantId = taskCallbackContext.getManager().getInstanceName();
 
     this.fs = fs;
@@ -120,6 +127,8 @@ public class GobblinHelixTask implements Task {
   public TaskResult run() {
     SharedResourcesBroker<GobblinScopeTypes> globalBroker = null;
     try {
+      MDC.put(ConfigurationKeys.JOB_NAME_KEY, this.jobName);
+      MDC.put(ConfigurationKeys.JOB_KEY_KEY, this.jobKey);
       Path workUnitFilePath =
           new Path(this.taskConfig.getConfigMap().get(GobblinClusterConfigurationKeys.WORK_UNIT_FILE_PATH));
 
@@ -160,6 +169,7 @@ public class GobblinHelixTask implements Task {
       LOGGER.error("GobblinHelixTask failed due to " + t.getMessage(), t);
       return new TaskResult(TaskResult.Status.ERROR, Throwables.getStackTraceAsString(t));
     } finally {
+      MDC.remove(ConfigurationKeys.JOB_ID_KEY);
       if (globalBroker != null) {
         try {
           globalBroker.close();

@@ -61,8 +61,8 @@ public class JobLauncherUtils {
    * @param jobName job name
    * @return new job ID
    */
-  public static String newJobId(String jobName) {
-    return Id.Job.create(jobName, System.currentTimeMillis()).toString();
+  public static Id.Job newJobId(String jobName) {
+    return Id.Job.create(jobName, System.currentTimeMillis());
   }
 
   /**
@@ -72,9 +72,19 @@ public class JobLauncherUtils {
    * @param sequence task sequence number
    * @return new task ID
    */
-  public static String newTaskId(String jobId, int sequence) {
-    Id parsedJobId = Id.Job.parse(jobId);
-    return Id.Task.create(parsedJobId.get(Id.Parts.INSTANCE_NAME), sequence).toString();
+  public static Id.Task newTaskId(String jobId, int sequence) {
+    return newTaskId(Id.Job.parse(jobId), sequence);
+  }
+
+  /**
+   * Create a new task ID for the job with the given job ID.
+   *
+   * @param jobId job ID
+   * @param sequence task sequence number
+   * @return new task ID
+   */
+  public static Id.Task newTaskId(Id.Job jobId, int sequence) {
+    return Id.Task.create(jobId.get(Id.Parts.INSTANCE_NAME), sequence);
   }
 
   /**
@@ -85,9 +95,20 @@ public class JobLauncherUtils {
    * @param sequence multi-task sequence number
    * @return new multi-task ID
    */
-  public static String newMultiTaskId(String jobId, int sequence) {
-    Id parsedJobId = Id.Job.parse(jobId);
-    return Id.MultiTask.create(parsedJobId.get(Id.Parts.INSTANCE_NAME), sequence).toString();
+  public static Id.MultiTask newMultiTaskId(String jobId, int sequence) {
+    return newMultiTaskId(Id.Job.parse(jobId), sequence);
+  }
+
+  /**
+   * Create an ID for a new multi-task (corresponding to a {@link gobblin.source.workunit.MultiWorkUnit})
+   * for the job with the given job ID.
+   *
+   * @param jobId job ID
+   * @param sequence multi-task sequence number
+   * @return new multi-task ID
+   */
+  public static Id.MultiTask newMultiTaskId(Id.Job jobId, int sequence) {
+    return Id.MultiTask.create(jobId.get(Id.Parts.INSTANCE_NAME), sequence);
   }
 
   /**
