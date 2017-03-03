@@ -1,5 +1,6 @@
 package gobblin.runtime.listeners;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletionService;
@@ -151,6 +152,11 @@ public class JobListeners {
             if (exception == null) {
               exception = new IOException(ee.getCause());
             }
+          }
+        }
+        for (JobListener jobListener : this.jobListeners) {
+          if (jobListener instanceof Closeable) {
+            ((Closeable)jobListener).close();
           }
         }
         if (wasInterrupted) {
