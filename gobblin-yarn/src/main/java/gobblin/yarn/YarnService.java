@@ -469,8 +469,7 @@ public class YarnService extends AbstractIdleService {
       return;
     }
 
-    int retryCount =
-        this.helixInstanceRetryCount.putIfAbsent(completedInstanceName, new AtomicInteger(0)).incrementAndGet();
+    int retryCount = getCompletedInstanceRetryCount(completedInstanceName);
 
     // Populate event metadata
     Optional<ImmutableMap.Builder<String, String>> eventMetadataBuilder = Optional.absent();
@@ -504,6 +503,17 @@ public class YarnService extends AbstractIdleService {
     this.eventBus.post(new NewContainerRequest(
         shouldStickToTheSameNode(containerStatus.getExitStatus()) ?
             Optional.of(completedContainerEntry.getKey()) : Optional.<Container>absent()));
+  }
+
+  private int getCompletedInstanceRetryCount(String completedInstanceName) {
+    AtomicInteger retryCount = this.helixInstanceRetryCount.get(completedInstanceName);
+    if (retryCount == null) {
+      retryCount = this.helixInstanceRetryCount.putIfAbsent(completedInstanceName, new AtomicInteger(0));
+      if (retryCount == null) {
+        retryCount = this.helixInstanceRetryCount.get(completedInstanceName);
+      }
+    }
+    return retryCount.incrementAndGet();
   }
 
   private ImmutableMap.Builder<String, String> buildContainerStatusEventMetadata(ContainerStatus containerStatus) {
