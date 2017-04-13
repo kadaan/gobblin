@@ -104,11 +104,11 @@ public abstract class FileBasedSource<S, D> extends AbstractSource<S, D> {
       if (previousSourceState.contains(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT)) {
         prevFsSnapshot = previousSourceState.getPropAsSet(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT);
       } else if (state.getPropAsBoolean(ConfigurationKeys.SOURCE_FILEBASED_FS_PRIOR_SNAPSHOT_REQUIRED,
-                ConfigurationKeys.DEFAULT_SOURCE_FILEBASED_FS_PRIOR_SNAPSHOT_REQUIRED)) {
+            ConfigurationKeys.DEFAULT_SOURCE_FILEBASED_FS_PRIOR_SNAPSHOT_REQUIRED)) {
           // If a previous job exists, there should be a snapshot property.  If not, we need to fail so that we
           // don't accidentally read files that have already been processed.
           throw new RuntimeException(String.format("No '%s' found on state of prior job '%s'",
-                  ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT, previousSourceState.getId()));
+              ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT, previousSourceState.getId()));
       }
     }
 
