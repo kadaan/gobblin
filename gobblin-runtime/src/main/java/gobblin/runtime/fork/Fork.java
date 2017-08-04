@@ -67,6 +67,7 @@ import gobblin.writer.PartitionedDataWriter;
  *       <li>Getting the next record off the record queue.</li>
  *       <li>Converting the record and doing row-level quality checking if applicable.</li>
  *       <li>Writing the record out if it passes the quality checking.</li>
+ *       <li>Committing output data if all the records were successfully processed.</li>
  *       <li>Cleaning up and exiting once all the records have been processed.</li>
  *     </ul>
  * </p>
@@ -162,6 +163,9 @@ public abstract class Fork extends GobblinRunnable implements Closeable, Runnabl
         try {
             processRecords();
             compareAndSetForkState(ForkState.RUNNING, ForkState.SUCCEEDED);
+            if (!commit()) {
+                this.forkState.set(ForkState.FAILED);
+            }
         } catch (Throwable t) {
             this.forkState.set(ForkState.FAILED);
             this.logger.error(String.format("Fork %d of task %s failed to process data records", this.index, this.taskId), t);
@@ -327,12 +331,12 @@ public abstract class Fork extends GobblinRunnable implements Closeable, Runnabl
     }
 
     /**
-     * Return if this {@link Fork} has succeeded processing all records.
+     * Return if this {@link Fork} has succeeded processing and committing all records.
      *
-     * @return if this {@link Fork} has succeeded processing all records
+     * @return if this {@link Fork} has succeeded processing and committing all records
      */
-    public boolean isSucceeded() {
-        return this.forkState.compareAndSet(ForkState.SUCCEEDED, ForkState.SUCCEEDED);
+    public boolean isCommitted() {
+        return this.forkState.compareAndSet(ForkState.COMMITTED, ForkState.COMMITTED);
     }
 
     @Override
