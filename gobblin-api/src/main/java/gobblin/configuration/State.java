@@ -88,22 +88,13 @@ public class State implements Writable {
     }
   }
 
-
   /**
    * Populates this instance with values of a {@link Properties} instance.
    *
    * @param properties a {@link Properties} instance
    */
   public void addAll(Properties properties) {
-    for (Map.Entry<Object,Object> e : properties.entrySet()) {
-      if (!ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT.equals(e.getKey())) {
-        this.properties.put(e.getKey(), e.getValue());
-      }
-    }
-  }
-
-  protected void addAllNoMatterWhat(State otherState) {
-    this.properties.putAll(otherState.properties);
+    this.properties.putAll(properties);
   }
 
   /**
