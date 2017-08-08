@@ -63,6 +63,7 @@ import gobblin.util.concurrent.GobblinRunnable;
  *       <li>Extracting, converting, and forking the source schema.</li>
  *       <li>Extracting, converting, doing row-level quality checking, and forking each data record.</li>
  *       <li>Putting each forked record into the record queue managed by each {@link Fork}.</li>
+ *       <li>Committing output data of each {@link Fork} once all {@link Fork}s finish.</li>
  *       <li>Cleaning up and exiting.</li>
  *     </ul>
  *
@@ -71,7 +72,6 @@ import gobblin.util.concurrent.GobblinRunnable;
  *       <li>Getting the next record off the record queue.</li>
  *       <li>Converting the record and doing row-level quality checking if applicable.</li>
  *       <li>Writing the record out if it passes the quality checking.</li>
- *       <li>Committing output data if all the records were successfully processed.</li>
  *       <li>Cleaning up and exiting once all the records have been processed.</li>
  *     </ul>
  * </p>
@@ -209,18 +209,21 @@ public class Task extends GobblinRunnable {
         }
       }
 
-      // Check if all forks are committed
-      boolean allForksCommitted = true;
+      // Check if all forks succeeded
+      boolean allForksSucceeded = true;
       for (Optional<Fork> fork : this.forks.keySet()) {
         if (fork.isPresent()) {
-          if (!fork.get().isCommitted()) {
-            allForksCommitted = false;
-            break;
+          if (fork.get().isSucceeded()) {
+            if (!fork.get().commit()) {
+              allForksSucceeded = false;
+            }
+          } else {
+            allForksSucceeded = false;
           }
         }
       }
 
-      if (allForksCommitted) {
+      if (allForksSucceeded) {
         // Set the task state to SUCCESSFUL. The state is not set to COMMITTED
         // as the data publisher will do that upon successful data publishing.
         this.taskState.setWorkingState(WorkUnitState.WorkingState.SUCCESSFUL);
