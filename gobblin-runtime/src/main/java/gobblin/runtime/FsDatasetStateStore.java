@@ -175,6 +175,7 @@ public class FsDatasetStateStore extends FsStateStore<JobState.DatasetState> {
       if (!previousDatasetStates.isEmpty()) {
         // There should be a single dataset state on the list if the list is not empty
         JobState.DatasetState previousDatasetState = previousDatasetStates.get(0);
+        previousDatasetState.setProp(ConfigurationKeys.DATASET_STATE_ID_KEY, filePath.getValue());
         datasetStatesByUrns.put(previousDatasetState.getProp(ConfigurationKeys.DATASET_URN_KEY,
             ConfigurationKeys.DEFAULT_DATASET_URN), previousDatasetState);
       }

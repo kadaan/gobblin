@@ -544,6 +544,9 @@ public class JobState extends SourceState {
   public DatasetState newDatasetState(boolean fullCopy) {
     DatasetState datasetState = new DatasetState(this.jobName, this.jobId);
     datasetState.addAll(this);
+    if (this.contains(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT)) {
+      datasetState.setProp(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT, this.getProp(ConfigurationKeys.SOURCE_FILEBASED_FS_SNAPSHOT));
+    }
     datasetState.setStartTime(this.startTime);
     datasetState.setEndTime(this.endTime);
     datasetState.setDuration(this.duration);
