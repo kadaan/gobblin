@@ -292,8 +292,9 @@ public class TaskExecutor extends AbstractIdleService {
       for (Map.Entry<String, Long> queuedTask : this.queuedTasks.entrySet()) {
         if (queuedTask.getValue() <= currentTimeMillis) {
           currentQueuedTaskCount++;
-          currentQueuedTaskTotalTime += queuedTask.getValue();
-          LOG.debug(String.format("Task %s has been waiting in the queue for %d ms.", queuedTask.getKey(), queuedTask.getValue()));
+          long currentQueuedTaskTime = currentTimeMillis - queuedTask.getValue();
+          currentQueuedTaskTotalTime += currentQueuedTaskTime;
+          LOG.debug(String.format("Task %s has been waiting in the queue for %d ms.", queuedTask.getKey(), currentQueuedTaskTime));
         } else {
           futureQueuedTaskCount++;
         }
