@@ -121,7 +121,7 @@ public class AWSJobConfigurationManager extends JobConfigurationManager {
       public void run() {
         try {
           fetchJobConf();
-        } catch (IOException | ConfigurationException e) {
+        } catch (Exception e) {
           LOGGER.error("Failed to fetch job configurations", e);
           throw new RuntimeException("Failed to fetch job configurations", e);
         }
