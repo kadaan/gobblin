@@ -188,6 +188,7 @@ public class ZookeeperBasedJobLock implements ListenableJobLock {
                 log.warn("Lost connection with zookeeper");
                 for (Map.Entry<String, JobLockEventListener> lockEventListener : lockEventListeners.entrySet()) {
                   log.warn("Informing job {} that lock was lost", lockEventListener.getKey());
+                  waitForZookeeper(curatorFramework);
                   lockEventListener.getValue().onLost();
                 }
                 break;
@@ -195,6 +196,7 @@ public class ZookeeperBasedJobLock implements ListenableJobLock {
                 log.warn("Suspended connection with zookeeper");
                 for (Map.Entry<String, JobLockEventListener> lockEventListener : lockEventListeners.entrySet()) {
                   log.warn("Informing job {} that lock was suspended", lockEventListener.getKey());
+                  waitForZookeeper(curatorFramework);
                   lockEventListener.getValue().onLost();
                 }
                 break;
@@ -229,6 +231,18 @@ public class ZookeeperBasedJobLock implements ListenableJobLock {
     if (curatorFramework != null) {
       curatorFramework.close();
       curatorFramework = null;
+    }
+  }
+
+  private static void waitForZookeeper(CuratorFramework curatorFramework) {
+    while (true) {
+      try {
+        curatorFramework.blockUntilConnected(2, TimeUnit.MINUTES);
+        log.info("Zookeeper connection re-established.  Continuing...");
+        break;
+      } catch (InterruptedException e) {
+        log.warn("Zookeeper connection not re-established within 2m.  Waiting...");
+      }
     }
   }
 
