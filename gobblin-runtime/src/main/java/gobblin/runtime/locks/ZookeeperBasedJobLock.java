@@ -191,7 +191,7 @@ public class ZookeeperBasedJobLock implements ListenableJobLock {
                   waitForZookeeper(curatorFramework);
                   lockEventListener.getValue().onLost();
                 }
-                log.fatal("Exiting due to zookeeper connection state: LOST");
+                log.error("Exiting due to zookeeper connection state: LOST");
                 System.exit(1);
                 break;
               case SUSPENDED:
@@ -201,7 +201,7 @@ public class ZookeeperBasedJobLock implements ListenableJobLock {
                   waitForZookeeper(curatorFramework);
                   lockEventListener.getValue().onLost();
                 }
-                log.fatal("Exiting due to zookeeper connection state: LOST");
+                log.error("Exiting due to zookeeper connection state: LOST");
                 System.exit(1);
                 break;
               case CONNECTED:
